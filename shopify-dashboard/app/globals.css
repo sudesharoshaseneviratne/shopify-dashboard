@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* ==========================================================================
+     COLOR TOKENS (--p-color-*)
+     ========================================================================== */
+  
+  /* Surfaces & Backgrounds */
+  --p-color-bg-app: #f1f1f1;             /* Main app canvas background */
+  --p-color-bg-surface: #ffffff;         /* Main content cards & panels */
+  --p-color-bg-surface-secondary: #f7f7f7; /* Secondary panels / header fills */
+  --p-color-bg-surface-hover: #f1f2f4;   /* Table row & list item hover state */
+  --p-color-bg-nav: #e3e3e3;             /* Sidebar navigation background */
+  --p-color-bg-topbar: #1a1a1a;          /* Top bar background */
+  
+  /* Text & Typography Colors */
+  --p-color-text: #1a1a1a;               /* Primary body text */
+  --p-color-text-secondary: #616161;     /* Labels, dates, subheadings */
+  --p-color-text-disabled: #8c8c8c;      /* Disabled inputs & muted captions */
+  --p-color-text-inverse: #ffffff;       /* Text on dark topbar */
+
+  /* Borders & Dividers */
+  --p-color-border: #e1e3e5;             /* Card borders & table outer bounds */
+  --p-color-border-subtle: #f1f1f1;      /* Internal table row dividers */
+  --p-color-border-hover: #c9cccf;       /* Input hover borders */
+
+  /* Badge Backgrounds & Text */
+  --p-color-bg-badge-success: #e4f8f0;   /* Paid / Fulfilled badges */
+  --p-color-text-badge-success: #007a5a;
+  --p-color-bg-badge-warning: #fff4e5;   /* Pending badges */
+  --p-color-text-badge-warning: #8a5000;
+  --p-color-bg-badge-critical: #fde8e8;  /* Unpaid / Due badges */
+  --p-color-text-badge-critical: #c5221f;
+  --p-color-bg-badge-neutral: #f4f6f8;   /* Default badges */
+  --p-color-text-badge-neutral: #202223;
+
+  /* ==========================================================================
+     TYPOGRAPHY TOKENS (--p-font-*)
+     ========================================================================== */
+  --p-font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  
+  --p-font-size-100: 12px;               /* Table headers, badges, captions */
+  --p-font-size-200: 13px;               /* Main table cells & sidebar links */
+  --p-font-size-300: 14px;               /* Primary UI controls & inputs */
+  --p-font-size-400: 16px;               /* Card headers */
+  --p-font-size-500: 20px;               /* Section page headings (e.g. "Orders") */
+
+  --p-font-weight-regular: 400;
+  --p-font-weight-medium: 500;
+  --p-font-weight-semibold: 600;
+
+  /* ==========================================================================
+     CARD BORDERS & ELEVATION (--p-border-* / --p-shadow-*)
+     ========================================================================== */
+  --p-border-radius-100: 6px;            /* Small pills & inputs */
+  --p-border-radius-200: 10px;           /* Cards, modals & dropdowns */
+  --p-border-radius-full: 9999px;        /* Status badges & avatars */
+
+  --p-shadow-card: 0px 1px 3px rgba(0, 0, 0, 0.04), 0px 1px 0px rgba(0, 0, 0, 0.03); /* Polaris comfortable outline shadow */
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9cccf;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+input[type="checkbox"] {
+  accent-color: #1a1a1a;
+  cursor: pointer;
+}
+
+/* --- Base Container & Canvas --- */
+.polaris-app-layout {
+  background-color: var(--p-color-bg-app);
+  font-family: var(--p-font-family);
+  color: var(--p-color-text);
+  min-height: 100vh;
+}
+
+/* --- Card Container --- */
+.polaris-card {
+  background-color: var(--p-color-bg-surface);
+  border: 1px solid var(--p-color-border);
+  border-radius: var(--p-border-radius-200);
+  box-shadow: var(--p-shadow-card);
+  overflow: hidden;
+}
+
+/* --- Polaris Data Table --- */
+.polaris-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.polaris-table th {
+  font-size: var(--p-font-size-100);
+  font-weight: var(--p-font-weight-medium);
+  color: var(--p-color-text-secondary);
+  text-transform: none; /* Sentence case, NOT uppercase */
+  text-align: left;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--p-color-border);
+  white-space: nowrap;
+}
+
+.polaris-table td {
+  font-size: var(--p-font-size-200);
+  color: var(--p-color-text);
+  padding: 4px 12px;
+  height: 34px;
+  border-bottom: 1px solid var(--p-color-border-subtle);
+  white-space: nowrap;
+}
+
+.polaris-table tr:hover {
+  background-color: var(--p-color-bg-surface-hover);
+}
+
+/* --- Polaris Status Badges --- */
+.polaris-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--p-border-radius-full);
+  font-size: var(--p-font-size-100);
+  font-weight: var(--p-font-weight-medium);
+  line-height: 16px;
+}
+
+.polaris-badge--success {
+  background-color: var(--p-color-bg-badge-success);
+  color: var(--p-color-text-badge-success);
+}
+
+.polaris-badge--warning {
+  background-color: var(--p-color-bg-badge-warning);
+  color: var(--p-color-text-badge-warning);
+}
+
+.polaris-badge--critical {
+  background-color: var(--p-color-bg-badge-critical);
+  color: var(--p-color-text-badge-critical);
+}
+
+.polaris-badge--neutral {
+  background-color: var(--p-color-bg-badge-neutral);
+  color: var(--p-color-text-badge-neutral);
+  border: 1px solid var(--p-color-border-hover);
+}
