@@ -117,7 +117,7 @@ input[type="checkbox"] {
   border: 1px solid var(--p-color-border);
   border-radius: var(--p-border-radius-200);
   box-shadow: var(--p-shadow-card);
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* --- Polaris Data Table --- */
