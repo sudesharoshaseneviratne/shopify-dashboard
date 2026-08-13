@@ -298,15 +298,6 @@ export default function DraftDetailsPage({ params }: { params: Promise<{ id: str
               <div className="text-[13px] text-[#616161]">Same as shipping address</div>
             </div>
           </div>
-
-          {/* Markets Card */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Markets</h3>
-            <div className="inline-flex items-center gap-1.5 bg-[#f1f2f4] px-2.5 py-1 rounded-md text-[13px] text-[#303030] font-medium">
-              <Globe className="w-3.5 h-3.5 text-[#616161]" />
-              <span>Sri Lanka</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

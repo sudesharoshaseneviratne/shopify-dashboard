@@ -96,6 +96,7 @@ export function useTableLogic<T extends Record<string, any>>(
   return {
     sortedData,
     selectedIds,
+    setSelectedIds,
     sortColumn,
     sortDirection,
     isAllSelected,

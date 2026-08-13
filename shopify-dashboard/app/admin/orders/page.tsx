@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/admin/Badge";
+import { ExportOrdersModal } from "@/components/admin/ExportOrdersModal";
 import { 
   ChevronDown, 
   Search, 
@@ -19,53 +21,35 @@ import {
   Eye,
   EyeOff,
   X,
+  XCircle,
   CornerDownLeft,
   ArrowDownRight,
   ChevronsUpDown,
   Filter,
   PlusCircle,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTableLogic } from "@/hooks/admin/useTableLogic";
-
-const initialOrders = [
-  { id: "#1015", date: "Tuesday at 3:57 pm", customer: "Fathima Hirshard", channel: "Online Store", total: "Rs 2,060.00", payment: "Payment pending", paymentType: "warning", fulfillment: "Fulfilled", items: "1 item", delivery: "", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1014", date: "Jul 27 at 11:00 pm", customer: "Isuru Abeyrama", channel: "Online Store", total: "Rs 3,960.00", payment: "Payment pending", paymentType: "warning", fulfillment: "Fulfilled", items: "1 item", delivery: "", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1013", date: "Jul 27 at 7:54 pm", customer: "E. P. H. De Silva", channel: "Draft Orders", total: "Rs 2,436.00", payment: "Payment pending", paymentType: "warning", fulfillment: "Fulfilled", items: "1 item", delivery: "", method: "Custom", alert: true, due: true, status: "Open" },
-  { id: "#1012", date: "Jul 21 at 4:54 pm", customer: "fathima Raihana", channel: "Online Store", total: "Rs 4,200.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "1 item", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1011", date: "Jul 21 at 8:46 am", customer: "Pradeepa Prasadini", channel: "Online Store", total: "Rs 8,560.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "2 items", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1010", date: "Jul 9 at 7:21 pm", customer: "Manjula Karunanayaka", channel: "Online Store", total: "Rs 4,392.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "1 item", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1009", date: "Jul 3 at 4:38 pm", customer: "Victoria Bloom", channel: "Online Store", total: "Rs 3,400.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "1 item", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1008", date: "Jun 16 at 11:26 am", customer: "Dihan Hettige", channel: "Online Store", total: "Rs 1,812.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "2 items", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-  { id: "#1007", date: "Jun 12 at 6:19 am", customer: "Dahamsiri HA", channel: "Online Store", total: "Rs 12,324.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "3 items", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-  { id: "#1006", date: "Apr 1 at 11:53 am", customer: "Thilini Premachandra", channel: "Online Store", total: "Rs 10,536.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "10 items", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-  { id: "#1005", date: "Mar 6 at 1:17 pm", customer: "Isuru Weerasuriya", channel: "Online Store", total: "Rs 2,260.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "1 item", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-  { id: "#1004", date: "Feb 6 at 12:51 pm", customer: "Kalpana de Silva", channel: "Online Store", total: "Rs 11,820.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "6 items", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-  { id: "#1003", date: "Feb 3 at 10:56 pm", customer: "Imalka Nishadi", channel: "Online Store", total: "Rs 4,140.00", payment: "Paid", paymentType: "neutral", fulfillment: "Unfulfilled", items: "2 items", delivery: "", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1002", date: "Jan 28 at 2:41 pm", customer: "Zainab Fathima", channel: "Online Store", total: "Rs 2,220.00", payment: "Paid", paymentType: "neutral", fulfillment: "Unfulfilled", items: "1 item", delivery: "", method: "Flat Shipping Rate", alert: false, due: false, status: "Open" },
-  { id: "#1001", date: "Dec 11 at 6:23 pm", customer: "Dileepa Wattegama", channel: "Online Store", total: "Rs 1,300.00", payment: "Paid", paymentType: "neutral", fulfillment: "Fulfilled", items: "1 item", delivery: "Delivered", method: "Flat Shipping Rate", alert: false, due: false, status: "Archived" },
-];
+import { initialOrdersList as initialOrders } from "@/lib/admin/ordersData";
 
 const categoryOptionsMap: Record<string, string[]> = {
   "Order status": ["Open", "Archived", "Canceled"],
+  "Date": ["Today", "Last 7 days", "Last 30 days", "Last 90 days", "Last 12 months", "Custom date", "Custom range"],
   "Payment status": ["Authorized", "Due", "Expired", "Paid", "Partially paid", "Partially refunded", "Pending", "Refunded", "Unpaid", "Voided"],
   "Fulfillment status": ["Fulfilled", "Unfulfilled", "Partially fulfilled", "Scheduled", "On hold", "Request declined"],
   "Delivery status": ["In transit", "Out for delivery", "Attempted delivery", "Delayed", "Failed delivery", "Delivered", "Ready for pickup", "Tracking added", "No status"],
-  "Return status": ["Return requested", "Return in progress", "Return closed"],
-  "Label status": ["No label", "Draft created", "Purchased", "Printed"],
-  "Chargeback and inquiry status": ["Open", "Submitted", "Won", "Lost"],
   "Delivery method": ["In store", "Local delivery", "Pickup in store", "Pickup point", "Shipping"],
-  "Address validation": ["Has issues", "No issues", "Not validated"],
-  "Customer request": ["Return requested", "Cancellation requested"],
-  "Date": ["Today", "Last 7 days", "Last 30 days", "Last 90 days", "Last 12 months", "Custom date", "Custom range"],
-  "Credit card": ["Visa", "Mastercard", "American Express", "Discover", "Diners Club"],
-  "Sales channel": ["Online Store", "Point of Sale", "Shop", "Custom App"],
 };
 
 export default function Orders() {
+  const router = useRouter();
+  const [ordersList, setOrdersList] = useState(initialOrders);
+
   const {
     sortedData: orders,
     selectedIds,
+    setSelectedIds,
     sortColumn,
     sortDirection,
     isAllSelected,
@@ -73,11 +57,129 @@ export default function Orders() {
     toggleSelectAll,
     handleRowCheckboxClick,
     isRowSelected,
-  } = useTableLogic(initialOrders, "id");
+  } = useTableLogic(ordersList, "id");
 
-  // Popover States
+  // Popover & Bulk Action States
   const [showAnalyticsBar, setShowAnalyticsBar] = useState(true);
   const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  const [isBulkSelectionMenuOpen, setIsBulkSelectionMenuOpen] = useState(false);
+  const [isBulkPrintMenuOpen, setIsBulkPrintMenuOpen] = useState(false);
+  const [isBulkMarkAsMenuOpen, setIsBulkMarkAsMenuOpen] = useState(false);
+  const [isBulkMoreActionsMenuOpen, setIsBulkMoreActionsMenuOpen] = useState(false);
+  const [showOnlySelected, setShowOnlySelected] = useState(false);
+  // Notification Banner & Progress Card States (Matching Screenshot)
+  const [darkToastMessage, setDarkToastMessage] = useState<string | null>(null);
+  const [actionNotification, setActionNotification] = useState<{
+    title: string;
+    label: string;
+    count: number;
+    total: number;
+    status: "in_progress" | "completed";
+  } | null>(null);
+
+  const triggerProgressAction = (
+    toastText: string,
+    actionLabel: string,
+    onCompleteAction: () => void
+  ) => {
+    const totalCount = selectedIds.size || 1;
+
+    setDarkToastMessage(toastText);
+    setActionNotification({
+      title: "In progress",
+      label: actionLabel,
+      count: 0,
+      total: totalCount,
+      status: "in_progress",
+    });
+
+    onCompleteAction();
+
+    setTimeout(() => {
+      setActionNotification((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: "Task completed",
+              count: totalCount,
+              status: "completed",
+            }
+          : null
+      );
+    }, 1200);
+
+    setTimeout(() => {
+      setDarkToastMessage(null);
+    }, 4500);
+
+    setTimeout(() => {
+      setActionNotification(null);
+    }, 6000);
+  };
+
+  const handleShowToast = (msg: string) => {
+    setDarkToastMessage(msg);
+    setTimeout(() => setDarkToastMessage(null), 3500);
+  };
+
+  const handleBulkMarkAs = (statusOption: string) => {
+    triggerProgressAction(
+      "Fulfilling order...",
+      `Marking orders as ${statusOption.toLowerCase()}`,
+      () => {
+        setOrdersList((prev) =>
+          prev.map((item) => {
+            if (selectedIds.has(item.id)) {
+              if (["Fulfilled", "Unfulfilled", "In progress", "On hold"].includes(statusOption)) {
+                return { ...item, fulfillment: statusOption };
+              } else if (statusOption === "Delivered") {
+                return { ...item, delivery: "Delivered" };
+              } else if (statusOption === "Cancel orders") {
+                return { ...item, status: "Canceled", fulfillment: "Canceled" };
+              }
+            }
+            return item;
+          })
+        );
+      }
+    );
+  };
+
+  const handleBulkCapturePayments = () => {
+    triggerProgressAction(
+      "Capturing payments...",
+      "Capturing payments for selected orders",
+      () => {
+        setOrdersList((prev) =>
+          prev.map((item) => {
+            if (selectedIds.has(item.id)) {
+              return { ...item, payment: "Paid" };
+            }
+            return item;
+          })
+        );
+      }
+    );
+  };
+
+  const handleBulkArchive = (archive: boolean) => {
+    triggerProgressAction(
+      archive ? "Archiving orders..." : "Unarchiving orders...",
+      archive ? "Archiving selected orders" : "Unarchiving selected orders",
+      () => {
+        setOrdersList((prev) =>
+          prev.map((item) => {
+            if (selectedIds.has(item.id)) {
+              return { ...item, status: archive ? "Archived" : "Open" };
+            }
+            return item;
+          })
+        );
+      }
+    );
+  };
 
   const [isDateOpen, setIsDateOpen] = useState(false);
   const [selectedDateRange, setSelectedDateRange] = useState("All time");
@@ -92,6 +194,7 @@ export default function Orders() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>([]);
   const [operatorMode, setOperatorMode] = useState<"is" | "is_not">("is");
+  const [hoveredSubOptionIndex, setHoveredSubOptionIndex] = useState<number>(0);
 
   const [activeFilters, setActiveFilters] = useState<{ category: string; value: string }[]>([]);
 
@@ -99,6 +202,7 @@ export default function Orders() {
     setSelectedCategory(categoryName);
     setSelectedSubOptions([]);
     setOperatorMode("is");
+    setHoveredSubOptionIndex(0);
     setIsFilterOpen(false);
   };
 
@@ -121,6 +225,56 @@ export default function Orders() {
   const [isSortSubMenuOpen, setIsSortSubMenuOpen] = useState(false);
   const [hideArchived, setHideArchived] = useState(false);
 
+  // Click outside ref declarations
+  const dateRef = useRef<HTMLDivElement>(null);
+  const viewsRef = useRef<HTMLDivElement>(null);
+  const searchFilterRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const columnsRef = useRef<HTMLDivElement>(null);
+  const bulkSelectionRef = useRef<HTMLDivElement>(null);
+  const bulkPrintRef = useRef<HTMLDivElement>(null);
+  const bulkMarkAsRef = useRef<HTMLDivElement>(null);
+  const bulkMoreActionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (dateRef.current && !dateRef.current.contains(target)) {
+        setIsDateOpen(false);
+      }
+      if (viewsRef.current && !viewsRef.current.contains(target)) {
+        setIsViewsOpen(false);
+      }
+      if (searchFilterRef.current && !searchFilterRef.current.contains(target)) {
+        setIsFilterOpen(false);
+        setSelectedCategory(null);
+      }
+      if (sortRef.current && !sortRef.current.contains(target)) {
+        setIsSortSubMenuOpen(false);
+      }
+      if (columnsRef.current && !columnsRef.current.contains(target)) {
+        setIsColumnsOpen(false);
+      }
+      if (bulkSelectionRef.current && !bulkSelectionRef.current.contains(target)) {
+        setIsBulkSelectionMenuOpen(false);
+      }
+      if (bulkPrintRef.current && !bulkPrintRef.current.contains(target)) {
+        setIsBulkPrintMenuOpen(false);
+      }
+      if (bulkMarkAsRef.current && !bulkMarkAsRef.current.contains(target)) {
+        setIsBulkMarkAsMenuOpen(false);
+      }
+      if (bulkMoreActionsRef.current && !bulkMoreActionsRef.current.contains(target)) {
+        setIsBulkMoreActionsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Column Visibility state matching Screenshots 2 & 4
   const [columns, setColumns] = useState([
     { id: "id", label: "Order", visible: true },
@@ -132,11 +286,6 @@ export default function Orders() {
     { id: "items", label: "Items", visible: true },
     { id: "delivery", label: "Delivery status", visible: true },
     { id: "method", label: "Delivery method", visible: true },
-    { id: "tags", label: "Tags", visible: true },
-    { id: "destination", label: "Destination", visible: false },
-    { id: "returnStatus", label: "Return status", visible: false },
-    { id: "poNumber", label: "PO number", visible: false },
-    { id: "labelStatus", label: "Label status", visible: false },
   ]);
 
   const toggleColumnVisibility = (colId: string) => {
@@ -150,37 +299,24 @@ export default function Orders() {
     return col ? col.visible : true;
   };
 
-  // Full filter criteria list from Screenshots 1, 2, 3
+  // Filter criteria list matching table headers column exactly
   const filterCategories = [
     "Order status",
+    "Date",
+    "Customer",
+    "Order total",
     "Payment status",
     "Fulfillment status",
-    "Delivery status",
-    "Return status",
-    "Label status",
-    "Chargeback and inquiry status",
-    "Order total",
-    "Delivery method",
-    "Destination",
-    "Address validation",
     "Number of items",
-    "Total product weight",
-    "Product",
-    "Discount code",
-    "App",
-    "Channel",
-    "B2B",
-    "Payout action required",
-    "Fraud risk",
-    "Customer request",
-    "Credit card (last 4 digits)",
-    "Tagged with",
-    "Date",
-    "Fulfill by",
+    "Delivery status",
+    "Delivery method",
   ];
 
   // Dynamic filter logic for live UI table
   const filteredOrders = orders.filter((order) => {
+    // Show only selected toggle
+    if (showOnlySelected && !selectedIds.has(order.id)) return false;
+
     // Date Range Filter
     if (selectedDateRange === "Today") {
       if (!order.date.includes("Tuesday") && !order.date.includes("Today") && !order.date.includes("Jul 27")) return false;
@@ -267,7 +403,10 @@ export default function Orders() {
           Orders
         </h1>
         <div className="flex items-center gap-2">
-          <button className="px-2.5 py-1 text-[13px] font-medium border border-[#c9cccf] rounded-md bg-white hover:bg-[#f6f6f7] text-[#303030] shadow-2xs transition">
+          <button 
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-2.5 py-1 text-[13px] font-medium border border-[#c9cccf] rounded-md bg-white hover:bg-[#f6f6f7] text-[#303030] shadow-2xs transition"
+          >
             Export
           </button>
 
@@ -302,7 +441,7 @@ export default function Orders() {
       {showAnalyticsBar && (
         <div className="bg-white border border-[#e1e3e5] rounded-xl p-1.5 mb-3 shadow-2xs flex items-stretch relative z-30">
           {/* Today / Date Range Dropdown Button */}
-          <div className="relative flex items-center pr-1 z-50">
+          <div ref={dateRef} className="relative flex items-center pr-1 z-50">
             <button 
               onClick={() => setIsDateOpen(!isDateOpen)}
               className="px-2.5 py-1.5 text-[13px] font-medium text-[#303030] flex items-center gap-1.5 hover:bg-[#f6f6f7] rounded-md transition"
@@ -352,10 +491,18 @@ export default function Orders() {
           {/* Metric Columns (Internal Scroll Container) */}
           <div className="flex items-center flex-1 min-w-0 overflow-x-auto">
             {/* Orders */}
-            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[110px]">
+            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[100px]">
               <div className="text-[12px] text-[#616161] border-b border-dashed border-[#a6a6a6] inline-block cursor-pointer">Orders</div>
               <div className="text-[13px] font-semibold text-[#1a1a1a] mt-0.5">
                 {filteredOrders.length} <span className="font-normal text-[#616161] ml-0.5">—</span>
+              </div>
+            </div>
+
+            {/* Total sales */}
+            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[130px]">
+              <div className="text-[12px] text-[#616161] border-b border-dashed border-[#a6a6a6] inline-block cursor-pointer">Total sales</div>
+              <div className="text-[13px] font-semibold text-[#1a1a1a] mt-0.5">
+                Rs {filteredOrders.reduce((sum, o) => sum + (parseFloat(o.total.replace(/[^0-9.]/g, "")) || 0), 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="font-normal text-[#616161] ml-0.5">—</span>
               </div>
             </div>
 
@@ -367,11 +514,11 @@ export default function Orders() {
               </div>
             </div>
 
-            {/* Sales reversals */}
-            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[130px]">
-              <div className="text-[12px] text-[#616161] border-b border-dashed border-[#a6a6a6] inline-block cursor-pointer">Sales reversals</div>
+            {/* Orders paid */}
+            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[110px]">
+              <div className="text-[12px] text-[#616161] border-b border-dashed border-[#a6a6a6] inline-block cursor-pointer">Orders paid</div>
               <div className="text-[13px] font-semibold text-[#1a1a1a] mt-0.5">
-                LKR 0 <span className="font-normal text-[#616161] ml-0.5">—</span>
+                {filteredOrders.filter(o => o.payment === "Paid").length} <span className="font-normal text-[#616161] ml-0.5">—</span>
               </div>
             </div>
 
@@ -390,256 +537,98 @@ export default function Orders() {
                 {filteredOrders.filter(o => o.delivery === "Delivered").length} <span className="font-normal text-[#616161] ml-0.5">—</span>
               </div>
             </div>
-
-            {/* Order to fulfillment time */}
-            <div className="px-4 py-1 border-l border-[#e1e3e5] flex-1 min-w-[230px] flex items-center justify-between">
-              <div>
-                <div className="text-[12px] text-[#616161] border-b border-dashed border-[#a6a6a6] inline-block cursor-pointer">Order to fulfillment time</div>
-                <div className="text-[13px] font-semibold text-[#1a1a1a] mt-0.5 flex items-center gap-1.5">
-                  <span>8.5 hours</span>
-                  <span className="text-[12px] font-medium text-[#107c41] flex items-center gap-0.5">
-                    <ArrowDownRight className="w-3.5 h-3.5 text-[#107c41]" /> 63%
-                  </span>
-                </div>
-              </div>
-
-              {/* Blue Sparkline Chart */}
-              <svg className="w-20 h-6 text-[#38bdf8] shrink-0" viewBox="0 0 80 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M 5 6 L 18 6 L 28 16 L 75 16" />
-                <circle cx="75" cy="16" r="1.5" fill="#38bdf8" stroke="none" />
-              </svg>
-            </div>
           </div>
         </div>
       )}
 
+
       {/* Main Table Card */}
-      <div className="polaris-card relative overflow-visible min-h-[380px]">
-        {/* Table Toolbar Controls */}
+      <div className="polaris-card relative overflow-visible">
+        {/* Table Toolbar Controls (Always Visible, Matching Screenshot 2) */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#e1e3e5] bg-white relative z-20 rounded-t-xl">
-          <div className="flex items-center gap-2 flex-1 relative">
+          <div className="flex items-center gap-2 flex-1 relative min-w-0">
+            {/* Unified Search and Filter Bar (Matching Real Shopify Dashboard) */}
+            <div ref={searchFilterRef} className="relative flex-1 w-full flex items-center bg-white border border-[#c9cccf] rounded-lg px-2 py-1 focus-within:border-[#005bd3] focus-within:ring-2 focus-within:ring-[#005bd3]/20 transition shadow-2xs">
+              
+              {/* 1. Integrated View Selector Pill on Far Left */}
+              <div ref={viewsRef} className="relative z-50 shrink-0 mr-2">
+                <button
+                  type="button"
+                  onClick={() => setIsViewsOpen(!isViewsOpen)}
+                  className="bg-[#f1f2f4] hover:bg-[#e4e5e7] text-[#1a1a1a] text-[12px] font-semibold px-2 py-0.5 rounded flex items-center gap-1.5 border border-[#c9cccf] transition"
+                >
+                  <span>{selectedView}</span>
+                  <ChevronsUpDown className="w-3 h-3 text-[#616161]" />
+                </button>
 
-            {/* View Dropdown Pill Filter (Matching Screenshot 3) */}
-            <div className="relative z-50">
-              <button
-                onClick={() => setIsViewsOpen(!isViewsOpen)}
-                className="bg-[#f1f2f4] hover:bg-[#e4e5e7] text-[#1a1a1a] text-[13px] font-semibold px-2.5 py-1 rounded-md flex items-center gap-1.5 border border-[#c9cccf] transition shadow-2xs"
-              >
-                <span>{selectedView}</span>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-[#616161]" />
-              </button>
-
-              {/* Floating Views Dropdown Menu (Matching Screenshot 3) */}
-              {isViewsOpen && (
-                <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-[#e1e3e5] rounded-xl shadow-xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in duration-100">
-                  {["All", "Unfulfilled", "Unpaid", "Open", "Archived"].map((view) => {
-                    const isSelected = selectedView === view;
-                    return (
-                      <button
-                        key={view}
-                        onClick={() => {
-                          setSelectedView(view);
-                          setIsViewsOpen(false);
-                        }}
-                        className={cn(
-                          "w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] rounded-md transition text-left",
-                          isSelected
-                            ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold"
-                            : "text-[#303030] hover:bg-[#f6f6f7]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isSelected ? (
-                            <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />
-                          ) : (
-                            <div className="w-3.5 h-3.5" />
-                          )}
-                          <span>{view}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Search and Filter Input Container */}
-            <div className="relative flex-1 max-w-md flex items-center gap-1.5">
-              {/* Active Filter Badges */}
-              {activeFilters.map((f, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-[#e4e5e7] text-[#1a1a1a] text-[12px] px-2 py-0.5 rounded-md font-medium shrink-0">
-                  <span>{f.category}: {f.value}</span>
-                  <X 
-                    className="w-3 h-3 text-[#616161] hover:text-[#1a1a1a] cursor-pointer" 
-                    onClick={() => setActiveFilters(prev => prev.filter((_, idx) => idx !== i))}
-                  />
-                </span>
-              ))}
-
-              <div className="relative flex-1 flex items-center bg-white border border-[#c9cccf] rounded-md px-2.5 py-1 focus-within:border-[#005bd3] focus-within:ring-1 focus-within:ring-[#005bd3] transition">
-                <Search className="w-3.5 h-3.5 text-[#616161] shrink-0 mr-2" />
-                
-                {/* Active Selected Category Pill Inside Input (Matching Screenshots 1-5) */}
-                {selectedCategory && (
-                  <span className="bg-[#f1f2f4] text-[#1a1a1a] text-[12px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-[#e1e3e5] shrink-0 mr-1.5">
-                    <span>
-                      {selectedCategory === "Order total" ? "Order total is between" : 
-                       selectedCategory === "Total product weight" ? "Total product weight is between" : 
-                       selectedCategory === "Number of items" ? "Number of items is" : 
-                       `${selectedCategory} is`}
-                    </span>
-                    {selectedCategory === "Order total" && (
-                      <span className="bg-[#d0e1fd] text-[#005bd3] px-1.5 py-0.5 rounded text-[11px] font-mono flex items-center gap-1">
-                        LKR Rs 0.0 – LKR Rs 0.0 <PlusCircle className="w-3 h-3 cursor-pointer" />
-                      </span>
-                    )}
-                    {selectedCategory === "Total product weight" && (
-                      <span className="bg-[#d0e1fd] text-[#005bd3] px-1.5 py-0.5 rounded text-[11px] font-mono flex items-center gap-1">
-                        0.0 kg – 0.0 kg <PlusCircle className="w-3 h-3 cursor-pointer" />
-                      </span>
-                    )}
-                    {selectedCategory === "Number of items" && (
-                      <span className="bg-[#d0e1fd] text-[#005bd3] px-1.5 py-0.5 rounded text-[11px] font-mono flex items-center gap-1">
-                        0 <PlusCircle className="w-3 h-3 cursor-pointer" />
-                      </span>
-                    )}
-                    <X 
-                      className="w-3 h-3 text-[#616161] hover:text-[#1a1a1a] cursor-pointer" 
-                      onClick={() => {
-                        setSelectedCategory(null);
-                        setSelectedSubOptions([]);
-                      }}
-                    />
-                  </span>
-                )}
-
-                <input
-                  type="text"
-                  placeholder={selectedCategory ? "" : "Search and filter"}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => {
-                    if (!selectedCategory) setIsFilterOpen(true);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      if (selectedCategory && selectedSubOptions.length > 0) {
-                        commitCategoryFilter();
-                      } else if (isFilterOpen && hoveredFilterIndex >= 0 && hoveredFilterIndex < filterCategories.length) {
-                        handleSelectCategory(filterCategories[hoveredFilterIndex]);
-                      }
-                    } else if (e.key === "Escape") {
-                      setIsFilterOpen(false);
-                      setSelectedCategory(null);
-                    }
-                  }}
-                  className="w-full text-[13px] bg-transparent outline-none text-[#1a1a1a]"
-                />
-
-                {/* Filter Categories Popover */}
-                {isFilterOpen && !selectedCategory && (
-                  <div className="absolute top-full left-0 mt-1.5 w-[320px] max-h-[340px] overflow-y-auto bg-white border border-[#e1e3e5] rounded-xl shadow-xl py-1 z-50 flex flex-col">
-                    {filterCategories.map((filterName, idx) => {
-                      const isHovered = hoveredFilterIndex === idx;
+                {/* Floating Views Dropdown Menu */}
+                {isViewsOpen && (
+                  <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out">
+                    {["All", "Unfulfilled", "Unpaid", "Open", "Archived"].map((view) => {
+                      const isSelected = selectedView === view;
                       return (
                         <button
-                          key={filterName}
-                          onMouseEnter={() => setHoveredFilterIndex(idx)}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleSelectCategory(filterName);
+                          key={view}
+                          type="button"
+                          onClick={() => {
+                            setSelectedView(view);
+                            setIsViewsOpen(false);
                           }}
                           className={cn(
-                            "flex items-center justify-between px-3 py-1.5 text-left text-[13px] transition",
-                            isHovered ? "bg-[#f1f2f4] text-[#1a1a1a]" : "text-[#303030] hover:bg-[#f1f2f4]"
+                            "w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] rounded-md transition text-left",
+                            isSelected
+                              ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold"
+                              : "text-[#303030] hover:bg-[#f6f6f7]"
                           )}
                         >
-                          <span>{filterName}</span>
-                          {isHovered && (
-                            <span className="inline-flex items-center gap-0.5 bg-[#e4e5e7] text-[#616161] text-[11px] px-1.5 py-0.5 rounded font-medium">
-                              <CornerDownLeft className="w-3 h-3" /> Enter
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {isSelected ? (
+                              <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />
+                            ) : (
+                              <div className="w-3.5 h-3.5" />
+                            )}
+                            <span>{view}</span>
+                          </div>
                         </button>
                       );
                     })}
                   </div>
                 )}
-
-                {/* Category Options Sub-Menu Popover (Matching Screenshots 1-5) */}
-                {selectedCategory && (
-                  <div className="absolute top-full left-0 mt-1.5 w-[270px] bg-white border border-[#e1e3e5] rounded-xl shadow-xl p-2.5 z-50 flex flex-col gap-1 animate-in fade-in duration-100">
-                    {/* Header Action Tag */}
-                    <div className="flex items-center justify-end pb-1 border-b border-[#f1f2f4] mb-1">
-                      <button
-                        onClick={commitCategoryFilter}
-                        className="inline-flex items-center gap-1 bg-[#f1f2f4] hover:bg-[#e4e5e7] border border-[#e1e3e5] text-[#616161] text-[11px] px-1.5 py-0.5 rounded font-medium transition"
-                      >
-                        <CornerDownLeft className="w-3 h-3 text-[#616161]" /> Enter
-                      </button>
-                    </div>
-
-                    {/* Sub-options Checkboxes */}
-                    <div className="flex flex-col gap-0.5 max-h-[220px] overflow-y-auto">
-                      {(categoryOptionsMap[selectedCategory] || ["Option 1", "Option 2"]).map((opt) => {
-                        const isChecked = selectedSubOptions.includes(opt);
-                        return (
-                          <label
-                            key={opt}
-                            className="flex items-center gap-2.5 px-2 py-1 text-[13px] text-[#1a1a1a] rounded-md hover:bg-[#f6f6f7] cursor-pointer transition select-none"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                setSelectedSubOptions(prev =>
-                                  prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]
-                                );
-                              }}
-                              className="rounded-[4px] border-[#c9cccf] cursor-pointer"
-                            />
-                            <span>{opt}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-
-                    {/* Divider Line */}
-                    <hr className="my-1.5 border-[#e1e3e5]" />
-
-                    {/* Operator Toggle (Is vs Is not) */}
-                    <div className="flex flex-col gap-0.5">
-                      <button
-                        type="button"
-                        onClick={() => setOperatorMode("is")}
-                        className="w-full flex items-center gap-2 px-2 py-1 text-[13px] text-[#1a1a1a] rounded-md hover:bg-[#f6f6f7] text-left transition"
-                      >
-                        <span className="w-3.5 flex items-center justify-center">
-                          {operatorMode === "is" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                        </span>
-                        <span>Is</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOperatorMode("is_not")}
-                        className="w-full flex items-center gap-2 px-2 py-1 text-[13px] text-[#1a1a1a] rounded-md hover:bg-[#f6f6f7] text-left transition"
-                      >
-                        <span className="w-3.5 flex items-center justify-center">
-                          {operatorMode === "is_not" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                        </span>
-                        <span>Is not</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
+
+              {/* 2. Text Search Input */}
+              <div className="flex-1 flex items-center gap-1.5 min-w-0 py-0.5">
+                {searchQuery === "" && (
+                  <Search className="w-3.5 h-3.5 text-[#616161] shrink-0 mr-1" />
+                )}
+
+                <input
+                  type="text"
+                  placeholder="Search and filter"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 min-w-[60px] text-[13px] bg-transparent outline-none text-[#1a1a1a]"
+                />
+              </div>
+
+              {/* 3. Clear Button (X) on Far Right when search query is typed */}
+              {searchQuery.trim() !== "" && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="p-1 text-[#616161] hover:text-[#1a1a1a] shrink-0 ml-1 rounded-full hover:bg-[#f1f2f4] transition"
+                  title="Clear search"
+                >
+                  <XCircle className="w-4 h-4 text-[#8a8a8a] hover:text-[#1a1a1a]" />
+                </button>
+              )}
             </div>
           </div>
 
           {/* Right Action Controls: Sort and Columns */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 ml-2.5 shrink-0">
             {/* Separate Sort Popover Button (Left Side Next to Columns) */}
-            <div className="relative">
+            <div ref={sortRef} className="relative">
               <button 
                 onClick={() => {
                   setIsSortSubMenuOpen(!isSortSubMenuOpen);
@@ -653,21 +642,16 @@ export default function Orders() {
 
               {/* Floating Sort Menu Popover */}
               {isSortSubMenuOpen && (
-                <div className="absolute top-full right-0 mt-1.5 w-[220px] bg-white border border-[#e1e3e5] rounded-2xl shadow-xl p-2 z-50 flex flex-col gap-0.5 text-[13px] animate-in fade-in duration-100 max-h-[360px] overflow-y-auto">
+                <div className="absolute top-full right-0 mt-1.5 w-[220px] bg-white border border-[#e1e3e5] rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-0.5 text-[13px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out max-h-[360px] overflow-y-auto">
                   <div className="text-[12px] font-semibold text-[#616161] px-2 py-1">Sort by</div>
                   {[
                     "Order", 
                     "Date", 
                     "Customer", 
-                    "Channel", 
                     "Total", 
                     "Fulfillment status", 
                     "Payment status", 
-                    "Items", 
-                    "Destination", 
-                    "PO number", 
-                    "Fulfill by", 
-                    "Label status"
+                    "Items"
                   ].map((colName) => {
                     const isSelected = (sortColumn === colName.toLowerCase() || (sortColumn === "id" && colName === "Order"));
                     return (
@@ -734,7 +718,7 @@ export default function Orders() {
             </div>
 
             {/* Columns Customization Popover Button */}
-            <div className="relative">
+            <div ref={columnsRef} className="relative">
               <button 
                 onClick={() => {
                   setIsColumnsOpen(!isColumnsOpen);
@@ -748,7 +732,7 @@ export default function Orders() {
 
               {/* Columns Customization Popover */}
               {isColumnsOpen && (
-                <div className="absolute top-full right-0 mt-1.5 w-[300px] max-h-[460px] overflow-y-auto bg-white border border-[#e1e3e5] rounded-xl shadow-xl p-3 z-40 flex flex-col gap-2">
+                <div className="absolute top-full right-0 mt-1.5 w-[300px] max-h-[460px] overflow-y-auto bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-3 z-40 flex flex-col gap-2 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out">
                   <div className="text-[12px] font-semibold text-[#616161]">Columns</div>
                 <div className="flex flex-col gap-0.5">
                   {columns.map((col) => (
@@ -783,70 +767,273 @@ export default function Orders() {
         <div className="overflow-x-auto">
           <table className="polaris-table">
             <thead>
-              <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#f7f7f7] select-none">
-                <th className="px-3 py-2 w-10">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    onChange={toggleSelectAll}
-                    className="rounded-[4px] border-[#c9cccf] cursor-pointer"
-                  />
-                </th>
-                {isColVisible("id") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("id")}>
-                    Order {renderSortIndicator("id")}
+              {selectedIds.size > 0 ? (
+                /* Bulk Action Header Row (Matching Screenshot 2 - Replaces Column Headers) */
+                <tr className="border-b border-[#e1e3e5] bg-white select-none h-[44px]">
+                  <th colSpan={100} className="px-3 py-1 font-normal text-left h-[44px] align-middle">
+                    <div className="flex items-center justify-between w-full relative z-30">
+                      {/* Left Group: Bulk Action Buttons */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* 1. Selection count dropdown button: [-] 21 selected v */}
+                        <div ref={bulkSelectionRef} className="relative">
+                          <button
+                            onClick={() => setIsBulkSelectionMenuOpen(!isBulkSelectionMenuOpen)}
+                            className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-2xs transition"
+                          >
+                            <span className="w-3.5 h-3.5 rounded bg-[#1a1a1a] flex items-center justify-center text-white shrink-0">
+                              <span className="w-2 h-0.5 bg-white rounded-full" />
+                            </span>
+                            <span>{selectedIds.size} selected</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
+                          </button>
+
+                          {isBulkSelectionMenuOpen && (
+                            <div className="absolute top-full left-0 mt-1.5 w-52 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out text-[13px] font-normal">
+                              <button
+                                onClick={() => {
+                                  setSelectedIds(new Set(filteredOrders.map((o) => o.id)));
+                                  setIsBulkSelectionMenuOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
+                              >
+                                Select all {filteredOrders.length} on page
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedIds(new Set());
+                                  setIsBulkSelectionMenuOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
+                              >
+                                Unselect all
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 2. Print v */}
+                        <div ref={bulkPrintRef} className="relative">
+                          <button
+                            onClick={() => setIsBulkPrintMenuOpen(!isBulkPrintMenuOpen)}
+                            className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-2xs transition"
+                          >
+                            <span>Print</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
+                          </button>
+
+                          {isBulkPrintMenuOpen && (
+                            <div className="absolute top-full left-0 mt-1.5 w-44 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out text-[13px] font-normal">
+                              <button
+                                onClick={() => {
+                                  setIsBulkPrintMenuOpen(false);
+                                  window.print();
+                                }}
+                                className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
+                              >
+                                Print packing slips
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 3. Mark as v */}
+                        <div ref={bulkMarkAsRef} className="relative">
+                          <button
+                            onClick={() => setIsBulkMarkAsMenuOpen(!isBulkMarkAsMenuOpen)}
+                            className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-2xs transition"
+                          >
+                            <span>Mark as</span>
+                            <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
+                          </button>
+
+                          {isBulkMarkAsMenuOpen && (
+                            <div className="absolute top-full left-0 mt-1.5 w-40 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out text-[13px] font-normal">
+                              {["Unfulfilled", "In progress", "Fulfilled", "On hold", "Delivered"].map((opt) => (
+                                <button
+                                  key={opt}
+                                  onClick={() => {
+                                    handleBulkMarkAs(opt);
+                                    setIsBulkMarkAsMenuOpen(false);
+                                  }}
+                                  className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
+                                >
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 4. Capture payments */}
+                        <button
+                          onClick={handleBulkCapturePayments}
+                          className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2.5 py-1 rounded-md shadow-2xs transition"
+                        >
+                          Capture payments
+                        </button>
+
+                        {/* 5. More actions (...) */}
+                        <div ref={bulkMoreActionsRef} className="relative">
+                          <button
+                            onClick={() => setIsBulkMoreActionsMenuOpen(!isBulkMoreActionsMenuOpen)}
+                            className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2 py-1 rounded-md shadow-2xs transition flex items-center justify-center"
+                          >
+                            <MoreHorizontal className="w-4 h-4 text-[#303030]" />
+                          </button>
+
+                          {isBulkMoreActionsMenuOpen && (
+                            <div className="absolute top-full left-0 mt-1.5 w-56 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out divide-y divide-[#f1f2f4] text-[13px] font-normal">
+                              <div className="py-0.5 space-y-0.5">
+                                <button onClick={() => { handleBulkMarkAs("Request fulfillment"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Request fulfillment</button>
+                                <button onClick={() => { handleBulkMarkAs("Cancel fulfillment requests"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Cancel fulfillment requests</button>
+                                <button onClick={() => { handleBulkMarkAs("Change fulfillment location"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Change fulfillment location</button>
+                              </div>
+                              <div className="py-0.5 space-y-0.5">
+                                <button onClick={() => { handleBulkArchive(true); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Archive orders</button>
+                                <button onClick={() => { handleBulkArchive(false); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Unarchive orders</button>
+                                <button onClick={() => { handleBulkMarkAs("Cancel orders"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Cancel orders</button>
+                              </div>
+                              <div className="py-0.5 space-y-0.5">
+                                <button onClick={() => { handleShowToast("Tags added"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Add tags</button>
+                                <button onClick={() => { handleShowToast("Tags removed"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">Remove tags</button>
+                              </div>
+                              <div className="py-1 space-y-0.5">
+                                <div className="px-3 pt-1 text-[11px] font-semibold text-[#616161] uppercase tracking-wider">Apps</div>
+                                <button onClick={() => { handleShowToast("Flow automation triggered"); setIsBulkMoreActionsMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium">
+                                  <div className="w-4 h-4 rounded bg-[#008060] flex items-center justify-center text-white text-[10px] font-bold shrink-0">F</div>
+                                  <span>Run Flow automation</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Group: Show all selected toggle switch */}
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-2 text-[12px] text-[#303030] font-medium cursor-pointer select-none">
+                          <button
+                            type="button"
+                            onClick={() => setShowOnlySelected(!showOnlySelected)}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              showOnlySelected ? "bg-[#1a1a1a]" : "bg-[#c9cccf]"
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                                showOnlySelected ? "translate-x-4" : "translate-x-0"
+                              }`}
+                            />
+                          </button>
+                          <span>Show all selected</span>
+                        </label>
+                      </div>
+                    </div>
                   </th>
-                )}
-                {isColVisible("date") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("date")}>
-                    Date ↓ {renderSortIndicator("date")}
+                </tr>
+              ) : (
+                /* Regular Column Headers Row (Matching h-[44px] height of bulk action row) */
+                <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#f7f7f7] select-none h-[44px]">
+                  <th className="px-3 py-1.5 w-10 h-[44px] align-middle">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                      className="rounded-[4px] border-[#c9cccf] cursor-pointer"
+                    />
                   </th>
-                )}
-                {isColVisible("customer") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("customer")}>
-                    Customer {renderSortIndicator("customer")}
-                  </th>
-                )}
-                {isColVisible("total") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("total")}>
-                    Total {renderSortIndicator("total")}
-                  </th>
-                )}
-                {isColVisible("payment") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("payment")}>
-                    Payment status {renderSortIndicator("payment")}
-                  </th>
-                )}
-                {isColVisible("fulfillmentStatus") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("fulfillment")}>
-                    Fulfillment status {renderSortIndicator("fulfillment")}
-                  </th>
-                )}
-                {isColVisible("items") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("items")}>
-                    Items {renderSortIndicator("items")}
-                  </th>
-                )}
-                {isColVisible("delivery") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("delivery")}>
-                    Delivery status {renderSortIndicator("delivery")}
-                  </th>
-                )}
-                {isColVisible("method") && (
-                  <th className="px-3 py-2 cursor-pointer hover:text-[#1a1a1a] transition" onClick={() => handleSort("method")}>
-                    Delivery method {renderSortIndicator("method")}
-                  </th>
-                )}
-              </tr>
+                  {isColVisible("id") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("id")}>
+                      Order {renderSortIndicator("id")}
+                    </th>
+                  )}
+                  {isColVisible("date") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("date")}>
+                      Date {renderSortIndicator("date")}
+                    </th>
+                  )}
+                  {isColVisible("customer") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("customer")}>
+                      Customer {renderSortIndicator("customer")}
+                    </th>
+                  )}
+                  {isColVisible("total") && (
+                    <th className="px-3 py-1.5 !text-right cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("total")}>
+                      Total {renderSortIndicator("total")}
+                    </th>
+                  )}
+                  {isColVisible("payment") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("payment")}>
+                      Payment status {renderSortIndicator("payment")}
+                    </th>
+                  )}
+                  {isColVisible("fulfillmentStatus") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("fulfillment")}>
+                      Fulfillment status {renderSortIndicator("fulfillment")}
+                    </th>
+                  )}
+                  {isColVisible("items") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("items")}>
+                      Items {renderSortIndicator("items")}
+                    </th>
+                  )}
+                  {isColVisible("delivery") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("delivery")}>
+                      Delivery status {renderSortIndicator("delivery")}
+                    </th>
+                  )}
+                  {isColVisible("method") && (
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("method")}>
+                      Delivery method {renderSortIndicator("method")}
+                    </th>
+                  )}
+
+                </tr>
+              )}
             </thead>
             <tbody>
-              {filteredOrders.map((order, idx) => {
+              {filteredOrders.length === 0 ? (
+                /* Empty state matching real Shopify screenshot 2 */
+                <tr className="bg-white">
+                  <td colSpan={100} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center max-w-md mx-auto py-6">
+                      <div className="w-16 h-16 rounded-full bg-[#f1f2f4] flex items-center justify-center mb-4">
+                        <Search className="w-8 h-8 text-[#616161] stroke-[1.25]" />
+                      </div>
+                      <h3 className="text-[16px] font-semibold text-[#1a1a1a] mb-1">No orders found</h3>
+                      <p className="text-[13px] text-[#616161] mb-5">
+                        Try changing the filters or search terms for this view
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setActiveFilters([]);
+                          setSelectedCategory(null);
+                          setSelectedSubOptions([]);
+                          setSelectedView("All");
+                        }}
+                        className="bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold px-4 py-2 rounded-lg shadow-2xs transition cursor-pointer"
+                      >
+                        Clear search and filters
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order, idx) => {
                 const selected = isRowSelected(order.id);
                 return (
                   <tr
                     key={order.id}
-                    className={`border-b border-[#f1f1f1] h-[34px] transition ${selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
-                      }`}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest("input, button, a, label")) return;
+                      router.push(`/admin/orders/${order.id.replace('#', '')}`);
+                    }}
+                    className={`border-b border-[#f1f1f1] h-[34px] transition cursor-pointer ${
+                      selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
+                    }`}
                   >
                     <td className="px-3 py-1">
                       <input
@@ -897,18 +1084,77 @@ export default function Orders() {
                     {isColVisible("method") && <td className="px-3 py-1 text-[#616161]">{order.method}</td>}
                   </tr>
                 );
-              })}
+              })
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Footer Learn More link */}
-      <div className="text-center my-6">
-        <a href="#" className="text-[13px] text-[#303030] hover:underline font-normal transition">
-          Learn more about orders
-        </a>
-      </div>
+      {/* Export Confirmation Modal */}
+      <ExportOrdersModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        orders={orders}
+        filteredOrders={filteredOrders}
+        selectedIds={selectedIds}
+        hasSearchOrFilter={searchQuery.trim() !== "" || activeFilters.length > 0}
+      />
+
+      {/* 1. Bottom-Center Dark Toast Banner (Matching Screenshot - Black Pill) */}
+      {darkToastMessage && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-[#000000] text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-3 text-[13px] font-medium border border-[#262626] animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span>{darkToastMessage}</span>
+          <button
+            onClick={() => setDarkToastMessage(null)}
+            className="text-[#8c8c8c] hover:text-white transition p-0.5 rounded"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* 2. Bottom-Right Progress Notification Card (Matching Screenshot - White Floating Card) */}
+      {actionNotification && (
+        <div className="fixed bottom-5 right-5 z-50 w-[340px] bg-white border border-[#e1e3e5] rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200 text-[13px]">
+          {/* Card Header */}
+          <div className="px-4 py-3 bg-white border-b border-[#f1f2f4] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {actionNotification.status === "in_progress" ? (
+                <Loader2 className="w-4 h-4 text-[#616161] animate-spin shrink-0" />
+              ) : (
+                <Check className="w-4 h-4 text-[#059669] shrink-0" />
+              )}
+              <span className="text-[13px] font-semibold text-[#1a1a1a]">
+                {actionNotification.title}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setActionNotification(null)}
+                className="text-[#616161] hover:text-[#1a1a1a] p-1 rounded-md hover:bg-[#f1f2f4] transition"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card Body Progress Row */}
+          <div className="px-4 py-3.5 bg-white flex items-center justify-between text-[#303030]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {actionNotification.status === "in_progress" ? (
+                <div className="w-3.5 h-3.5 rounded-full border border-[#8c8c8c] shrink-0" />
+              ) : (
+                <Check className="w-3.5 h-3.5 text-[#059669] shrink-0" />
+              )}
+              <span className="truncate">{actionNotification.label}</span>
+            </div>
+            <span className="text-[#616161] text-[12px] font-mono shrink-0 ml-2">
+              {actionNotification.count} of {actionNotification.total}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

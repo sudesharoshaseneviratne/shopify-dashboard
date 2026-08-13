@@ -41,7 +41,8 @@ const searchItems = [
   { title: "Content Metaobjects", category: "Content", href: "/admin/content/metaobjects", icon: <FileText className="w-4 h-4" /> },
   { title: "Media Files", category: "Content", href: "/admin/content/files", icon: <FileText className="w-4 h-4" /> },
   { title: "Navigation Menus", category: "Content", href: "/admin/content/menus", icon: <FileText className="w-4 h-4" /> },
-  { title: "Blog Posts", category: "Content", href: "/admin/content/blog-posts", icon: <FileText className="w-4 h-4" /> }
+  { title: "Blog Posts", category: "Content", href: "/admin/content/blog-posts", icon: <FileText className="w-4 h-4" /> },
+  { title: "Store Settings", category: "Settings", href: "/admin/settings", icon: <SlidersHorizontal className="w-4 h-4" /> }
 ];
 
 export function TopBar() {
