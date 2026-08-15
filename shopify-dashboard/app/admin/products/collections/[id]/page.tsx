@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -13,56 +13,74 @@ import {
   SlidersHorizontal,
   X,
   Users,
-  Search,
-  Check,
-  Tag
+  Eye,
+  Tag,
+  Copy,
+  ExternalLink,
+  MoreHorizontal
 } from "lucide-react";
-import { CollectionIcon, ProductIcon } from "@shopify/polaris-icons";
+import { CollectionIcon } from "@shopify/polaris-icons";
 import { cn } from "@/lib/utils";
 
-// Sample products for "Add products" modal
-const sampleProductsForCollection = [
-  { id: "1", name: "Abacus Year 2 Workbook 3", price: "LKR 450.00", status: "Active" },
-  { id: "2", name: "Abacus Year 2 Textbook", price: "LKR 600.00", status: "Active" },
-  { id: "3", name: "THE SECRET SEVEN - SECRET SEVEN ADVENTURE", price: "LKR 750.00", status: "Active" },
-  { id: "4", name: "THE BUDDHIST WAY OF LIFE FOR GRADE 5 STU", price: "LKR 900.00", status: "Draft" },
-  { id: "5", name: "Sinhala Wada Potha 3", price: "LKR 350.00", status: "Active" },
-  { id: "6", name: "Sinhala Wada Potha 2", price: "LKR 300.00", status: "Active" },
-];
+// Mock Collections Database
+const mockCollectionsData: Record<string, { id: string; title: string; description: string; handle: string; products: Array<{ id: string; title: string; badge: string; bgGradient: string }> }> = {
+  "1": {
+    id: "1",
+    title: "Sinhala Books",
+    description: "",
+    handle: "sinhala-books-sinhala-readers",
+    products: [
+      { id: "p1", title: "Sinhala Kiyaveem Potha 5", badge: "5", bgGradient: "from-amber-200 to-green-300" },
+      { id: "p2", title: "Government Sinhala Wada Potha 3 -...", badge: "3", bgGradient: "from-blue-200 to-indigo-300" },
+      { id: "p3", title: "Government Sinhala Wada Potha 2 -...", badge: "2", bgGradient: "from-purple-200 to-pink-300" },
+      { id: "p4", title: "Government Sinhala Kiyaveem Potha 4 -...", badge: "4", bgGradient: "from-emerald-200 to-teal-300" },
+      { id: "p5", title: "Government Sinhala Kiyaveem Potha 3 -...", badge: "3", bgGradient: "from-rose-200 to-orange-300" },
+      { id: "p6", title: "Government Sinhala Kiyaveem Potha 2 -...", badge: "2", bgGradient: "from-cyan-200 to-blue-300" },
+      { id: "p7", title: "MUTHU AKURU GRADE 4 - BOOK 3", badge: "3", bgGradient: "from-lime-200 to-emerald-300" },
+      { id: "p8", title: "MUTHU AKURU GRADE 4 - BOOK 2", badge: "2", bgGradient: "from-violet-200 to-purple-300" },
+    ]
+  },
+  "2": {
+    id: "2",
+    title: "Generic Publishers",
+    description: "",
+    handle: "generic-publishers",
+    products: [
+      { id: "p1", title: "Abacus Year 1 Workbook 1", badge: "1", bgGradient: "from-blue-200 to-cyan-300" },
+      { id: "p2", title: "Abacus Year 1 Workbook 2", badge: "2", bgGradient: "from-teal-200 to-emerald-300" },
+      { id: "p3", title: "Abacus Year 2 Textbook", badge: "2", bgGradient: "from-indigo-200 to-blue-300" },
+    ]
+  },
+};
 
-export default function AddCollectionPage() {
+export default function CollectionEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
 
-  // Form States
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  // Find collection or fallback to default Sinhala Books
+  const initialCollection = mockCollectionsData[resolvedParams.id] || mockCollectionsData["1"];
+
+  const [title, setTitle] = useState(initialCollection.title);
+  const [description, setDescription] = useState(initialCollection.description);
+  const [handle, setHandle] = useState(initialCollection.handle);
+  const [collectionProducts, setCollectionProducts] = useState(initialCollection.products);
+  const [sortOption, setSortOption] = useState("Most relevant");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [themeTemplate, setThemeTemplate] = useState("Default collection");
-  
-  // Products Modal & Conditions States
-  const [isAddProductsModalOpen, setIsAddProductsModalOpen] = useState(false);
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [conditions, setConditions] = useState<Array<{ id: number; text: string }>>([]);
-  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 
-  const handleAddCondition = () => {
-    setConditions((prev) => [...prev, { id: Date.now(), text: "Product title equals Abacus" }]);
+  const handleRemoveProduct = (productId: string) => {
+    setCollectionProducts((prev) => prev.filter((p) => p.id !== productId));
   };
 
   const handleSave = () => {
     router.push("/admin/products/collections");
   };
 
-  const toggleSelectProduct = (id: string) => {
-    setSelectedProductIds((prev) =>
-      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
-    );
-  };
-
   return (
     <div className="space-y-4 font-sans pb-24 max-w-[1020px] mx-auto select-none text-[#1a1a1a]">
-      {/* Header Breadcrumb & Title matching Screenshot 1 */}
-      <div className="flex items-center justify-between py-1">
+      {/* Top Navigation Header matching Screenshots 1 & 2 */}
+      <div className="flex items-center justify-between py-1 flex-wrap gap-2">
         <div className="flex items-center gap-2 text-[18px] font-bold text-[#1a1a1a]">
           <Link
             href="/admin/products/collections"
@@ -72,7 +90,51 @@ export default function AddCollectionPage() {
             <CollectionIcon className="w-5 h-5 fill-current text-[#616161]" />
           </Link>
           <span className="text-[#616161] text-[15px] font-normal">›</span>
-          <h1 className="text-[18px] font-bold text-[#1a1a1a]">Add collection</h1>
+          <h1 className="text-[18px] font-bold text-[#1a1a1a]">{title}</h1>
+        </div>
+
+        {/* Top Right Action Buttons matching Screenshot 1 */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer flex items-center gap-1"
+          >
+            <span>View</span>
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
+              className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer flex items-center gap-1"
+            >
+              <span>More actions</span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
+            </button>
+            {isMoreActionsOpen && (
+              <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 animate-in fade-in-0 zoom-in-95 duration-100 flex flex-col gap-0.5 text-[13px]">
+                <button
+                  type="button"
+                  onClick={() => setIsMoreActionsOpen(false)}
+                  className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
+                >
+                  Create product view
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMoreActionsOpen(false)}
+                  className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-[#fff5f5] rounded-lg transition font-medium"
+                >
+                  Delete collection
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -82,10 +144,10 @@ export default function AddCollectionPage() {
         {/* Left Column (~68%) */}
         <div className="lg:col-span-2 space-y-4">
           
-          {/* Card 1: Image + Title + Description Header Card matching Screenshot 1 */}
+          {/* Card 1: Main Header Card (Title + Description + Image) matching Screenshot 1 */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4 relative">
             <div className="flex gap-5 items-start">
-              {/* Left Image Uploader Box matching Screenshot 1 */}
+              {/* Left Image Uploader Dropzone Box matching Screenshot 1 */}
               <label className="w-36 h-36 border border-dashed border-[#c9cccf] rounded-2xl flex flex-col items-center justify-center bg-white hover:bg-[#fafafa] transition cursor-pointer shrink-0 relative group shadow-2xs">
                 <input type="file" accept="image/*" className="hidden" />
                 <Upload className="w-6 h-6 text-[#616161] group-hover:scale-110 transition" />
@@ -120,17 +182,36 @@ export default function AddCollectionPage() {
             </div>
           </div>
 
-          {/* Card 2: Collection Items Preview Grid Card matching Screenshot 1 */}
+          {/* Card 2: Collection Items Cards Grid Card matching Screenshot 1 & 2 */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Collection items</h3>
-                <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-semibold px-2 py-0.5 rounded-full">
-                  {selectedProductIds.length}
+                <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                  {collectionProducts.length}
                 </span>
               </div>
-              <div className="text-[12px] text-[#616161]">
-                Add conditions or products to populate your collection
+
+              {/* Default Sort Selector Dropdown matching Screenshot 1 */}
+              <div className="flex items-center gap-1.5 text-[12.5px] text-[#616161]">
+                <span>Default sort:</span>
+                <div className="relative">
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                    className="appearance-none font-semibold text-[#1a1a1a] bg-transparent outline-none pr-5 cursor-pointer"
+                  >
+                    <option>Most relevant</option>
+                    <option>Best selling</option>
+                    <option>Product title A-Z</option>
+                    <option>Product title Z-A</option>
+                    <option>Price low to high</option>
+                    <option>Price high to low</option>
+                    <option>Created new to old</option>
+                    <option>Created old to new</option>
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#616161] absolute right-0 top-1 pointer-events-none" />
+                </div>
               </div>
             </div>
 
@@ -182,17 +263,39 @@ export default function AddCollectionPage() {
               </button>
             </div>
 
-            {/* Faint Product Skeleton Cards Grid matching Screenshot 1 & 2 */}
+            {/* Rich Product Cards Grid matching Screenshot 1 & 2 */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              {collectionProducts.map((product) => (
                 <div
-                  key={i}
-                  className="bg-white rounded-2xl p-3 border border-[#e1e3e5] space-y-2 aspect-3/4 flex flex-col justify-between opacity-35 hover:opacity-75 transition shadow-2xs"
+                  key={product.id}
+                  className="group relative bg-white rounded-2xl p-2.5 border border-[#e1e3e5] space-y-2 flex flex-col justify-between hover:shadow-md transition cursor-pointer"
                 >
-                  <div className="w-full h-28 bg-[#f1f2f4] rounded-xl" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 w-3/4 bg-[#e4e5e7] rounded" />
-                    <div className="h-2.5 w-1/2 bg-[#e4e5e7] rounded" />
+                  {/* Top Image Box with Badge & Hover Remove Icon (Screenshot 2) */}
+                  <div className={cn("w-full h-32 rounded-xl bg-gradient-to-tr flex items-end justify-end p-2 relative overflow-hidden", product.bgGradient)}>
+                    {/* Hover Remove (✕) Icon on Top Right Corner matching Screenshot 2 */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveProduct(product.id);
+                      }}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 hover:bg-white text-[#616161] hover:text-red-600 shadow-md flex items-center justify-center transition opacity-0 group-hover:opacity-100 z-10 cursor-pointer"
+                      title="Remove from collection"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* Bottom Right Quantity Badge Overlay matching Screenshot 1 & 2 */}
+                    <div className="w-5 h-5 rounded-full bg-white/80 backdrop-blur-xs text-[#1a1a1a] text-[11px] font-bold flex items-center justify-center shadow-2xs">
+                      {product.badge}
+                    </div>
+                  </div>
+
+                  {/* Product Title Label matching Screenshot 1 & 2 */}
+                  <div className="px-0.5">
+                    <div className="text-[12.5px] font-semibold text-[#1a1a1a] leading-tight line-clamp-2" title={product.title}>
+                      {product.title}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -201,7 +304,12 @@ export default function AddCollectionPage() {
 
           {/* Card 3: Theme Template matching Screenshot 2 */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
-            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Theme template</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Theme template</h3>
+              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] transition">
+                <Eye className="w-4 h-4" />
+              </button>
+            </div>
             <div className="relative">
               <select
                 value={themeTemplate}
@@ -222,9 +330,12 @@ export default function AddCollectionPage() {
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-0.5 pt-1">
-              <div className="text-[14px] font-semibold text-[#005bd3]">Learnix LK</div>
-              <div className="text-[12px] text-[#006621]">https://learnix.lk › collections ›</div>
+            <div className="space-y-1 pt-1">
+              <div className="text-[13px] text-[#303030]">Learnix LK</div>
+              <div className="text-[12px] text-[#006621]">https://learnix.lk › collections › {handle}</div>
+              <div className="text-[16px] font-semibold text-[#005bd3] hover:underline cursor-pointer pt-0.5">
+                {title}
+              </div>
             </div>
           </div>
         </div>
@@ -242,36 +353,23 @@ export default function AddCollectionPage() {
               <ChevronDown className="w-4 h-4 text-[#616161] cursor-pointer" />
             </div>
 
-            {/* Inner Condition Buttons Box matching Screenshot 1 */}
+            {/* Inner Condition Box with count pill on right matching Screenshot 1 */}
             <div className="bg-[#f6f6f7] border border-[#e1e3e5] rounded-2xl p-3 space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
-                  onClick={handleAddCondition}
                   className="px-3 py-1.5 text-[12.5px] font-semibold bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition shadow-2xs flex items-center gap-1.5 text-[#303030] cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 text-[#616161]" />
                   <span>Add condition</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddProductsModalOpen(true)}
-                  className="px-3 py-1.5 text-[12.5px] font-semibold bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition shadow-2xs flex items-center gap-1.5 text-[#303030] cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-[#616161]" />
-                  <span>Add products</span>
-                </button>
-              </div>
 
-              {conditions.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  {conditions.map((cond) => (
-                    <div key={cond.id} className="text-[12px] bg-white p-2 rounded-xl border border-[#e1e3e5] text-[#303030] font-medium">
-                      {cond.text}
-                    </div>
-                  ))}
+                {/* Right Count Pill Badge matching Screenshot 1 (🏷️ 8) */}
+                <div className="flex items-center gap-1.5 bg-white border border-[#c9cccf] px-2.5 py-1 rounded-full text-[12px] font-bold text-[#1a1a1a] shadow-2xs">
+                  <Tag className="w-3 h-3 text-[#616161]" />
+                  <span>{collectionProducts.length}</span>
                 </div>
-              )}
+              </div>
 
               <div className="pt-1">
                 <button
@@ -311,85 +409,6 @@ export default function AddCollectionPage() {
           </button>
         </div>
       </div>
-
-      {/* Add Products Modal Overlay */}
-      {isAddProductsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4 select-none animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-[#1a1a1a] border border-[#e1e3e5] animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-[#e1e3e5] flex items-center justify-between">
-              <h2 className="text-[16px] font-semibold text-[#1a1a1a]">Add products</h2>
-              <button
-                type="button"
-                onClick={() => setIsAddProductsModalOpen(false)}
-                className="p-1 rounded-md text-[#616161] hover:text-[#1a1a1a] hover:bg-[#f1f2f4] transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 border-b border-[#e1e3e5]">
-              <div className="relative flex items-center bg-white border border-[#c9cccf] rounded-xl px-3 py-1.5 focus-within:border-[#005bd3]">
-                <Search className="w-4 h-4 text-[#616161] mr-2 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Search products"
-                  value={productSearchQuery}
-                  onChange={(e) => setProductSearchQuery(e.target.value)}
-                  className="w-full outline-none text-[13px] text-[#1a1a1a]"
-                />
-              </div>
-            </div>
-
-            <div className="max-h-72 overflow-y-auto p-2 space-y-1">
-              {sampleProductsForCollection
-                .filter((p) => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()))
-                .map((p) => {
-                  const isChecked = selectedProductIds.includes(p.id);
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => toggleSelectProduct(p.id)}
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-xl cursor-pointer transition",
-                        isChecked ? "bg-[#f4f6f8]" : "hover:bg-[#fafafa]"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="rounded border-[#c9cccf] cursor-pointer"
-                        />
-                        <div>
-                          <div className="text-[13px] font-semibold text-[#1a1a1a]">{p.name}</div>
-                          <div className="text-[11.5px] text-[#616161]">{p.price}</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-
-            <div className="px-6 py-3 border-t border-[#e1e3e5] bg-[#fafafa] flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsAddProductsModalOpen(false)}
-                className="px-4 py-1.5 border border-[#c9cccf] rounded-xl text-[13px] font-medium text-[#303030] hover:bg-[#f6f6f7] bg-white transition cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAddProductsModalOpen(false)}
-                className="px-4 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] text-white rounded-xl text-[13px] font-semibold transition cursor-pointer shadow-2xs"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

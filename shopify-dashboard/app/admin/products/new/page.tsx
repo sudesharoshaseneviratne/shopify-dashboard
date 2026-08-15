@@ -3,19 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ProductIcon } from "@shopify/polaris-icons";
 import { 
   ChevronDown, 
   ChevronUp, 
   HelpCircle, 
   Plus, 
   Edit2, 
-  Tag, 
   Info, 
   Settings, 
   Check, 
-  Upload, 
-  FileText,
   Bold,
   Italic,
   Underline,
@@ -23,35 +19,71 @@ import {
   Image as ImageIcon,
   Video,
   List,
-  Code
+  Code,
+  Sparkles,
+  Lock,
+  X,
+  Share2,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CollectionModal } from "@/components/admin/CollectionModal";
+import { ProductIcon } from "@shopify/polaris-icons";
 
 export default function AddProductPage() {
   const router = useRouter();
 
-  // Form State
+  // Main Form States
   const [title, setTitle] = useState("Short sleeve t-shirt");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Choose a product category");
   const [price, setPrice] = useState("0.00");
-  const [compareAtPrice, setCompareAtPrice] = useState("0.00");
+  const [compareAtPrice, setCompareAtPrice] = useState("");
+  const [unitPrice, setUnitPrice] = useState("");
   const [chargeTax, setChargeTax] = useState(true);
+  const [costPerItem, setCostPerItem] = useState("");
+  
+  // Inventory States
   const [trackInventory, setTrackInventory] = useState(true);
-  const [isPhysicalProduct, setIsPhysicalProduct] = useState(true);
   const [quantity, setQuantity] = useState("0");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
   const [continueSelling, setContinueSelling] = useState(false);
-  const [productWeight, setProductWeight] = useState("0.0");
-  const [selectedStatus, setSelectedStatus] = useState<"Active" | "Draft" | "Unlisted">("Active");
 
-  // Accordion Expand States (Screenshots 3, 4, 5)
-  const [isPriceAccordionOpen, setIsPriceAccordionOpen] = useState(true);
-  const [isInventoryAccordionOpen, setIsInventoryAccordionOpen] = useState(true);
+  // Shipping States
+  const [isPhysicalProduct, setIsPhysicalProduct] = useState(true);
+  const [selectedPackage, setSelectedPackage] = useState("Store default • Sample box - 22 × 13.7 × 4.2 cm, 0 kg");
+  const [productWeight, setProductWeight] = useState("0.0");
+  const [weightUnit, setWeightUnit] = useState("kg");
+  const [countryOrigin, setCountryOrigin] = useState("");
+  const [hsCode, setHsCode] = useState("");
+
+  // Organization States
+  const [selectedStatus, setSelectedStatus] = useState<"Active" | "Draft">("Active");
+  const [productType, setProductType] = useState("None");
+  const [vendor, setVendor] = useState("None");
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [themeTemplate, setThemeTemplate] = useState("Default product");
+
+  // Modals & Expandable Section States
+  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+  
+  const [isPricePillExpanded, setIsPricePillExpanded] = useState(false);
+  const [isInventoryPillExpanded, setIsInventoryPillExpanded] = useState(false);
+  const [isShippingPillExpanded, setIsShippingPillExpanded] = useState(false);
+
+  // Active Pill Field Toggles inside Expandable Sections
+  const [activePriceField, setActivePriceField] = useState<string | null>(null);
+  const [activeInventoryField, setActiveInventoryField] = useState<string | null>(null);
+  const [activeShippingField, setActiveShippingField] = useState<string | null>(null);
 
   const statusDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Close status popover when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
@@ -59,20 +91,26 @@ export default function AddProductPage() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSave = () => {
     router.push("/admin/products");
   };
 
+  const handleAddTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput("");
+      setIsAddingTag(false);
+    }
+  };
+
   return (
-    <div className="space-y-4 font-sans pb-16 max-w-[960px] mx-auto">
-      {/* Header Breadcrumb & Title */}
+    <div className="space-y-4 font-sans pb-24 max-w-[1020px] mx-auto select-none text-[#1a1a1a]">
+      {/* Top Header Breadcrumb & Title */}
       <div className="flex items-center justify-between py-1">
-        <div className="flex items-center gap-1.5 text-[18px] font-bold text-[#1a1a1a]">
+        <div className="flex items-center gap-2 text-[18px] font-bold text-[#1a1a1a]">
           <Link
             href="/admin/products"
             className="p-1 rounded-md text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition flex items-center justify-center cursor-pointer"
@@ -80,475 +118,783 @@ export default function AddProductPage() {
           >
             <ProductIcon className="w-5 h-5 fill-current text-[#616161]" />
           </Link>
-          <span className="text-[#616161] text-[15px] font-normal leading-none">›</span>
+          <span className="text-[#616161] text-[15px] font-normal">›</span>
           <h1 className="text-[18px] font-bold text-[#1a1a1a]">Add product</h1>
         </div>
       </div>
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column (2 Cols wide) */}
+        {/* Left Main Column (~68%) */}
         <div className="lg:col-span-2 space-y-4">
+          
           {/* Card 1: Title & Description */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-3">
-            <div className="space-y-1">
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="space-y-1.5">
               <label className="text-[13px] font-semibold text-[#1a1a1a]">Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Short sleeve t-shirt"
-                className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3] transition bg-white"
+                className="w-full text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 transition bg-white"
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-[13px] font-semibold text-[#1a1a1a]">Description</label>
-              {/* Rich Text Toolbar */}
-              <div className="border border-[#c9cccf] rounded-lg overflow-hidden focus-within:border-[#005bd3] focus-within:ring-1 focus-within:ring-[#005bd3] transition">
-                <div className="bg-[#f6f6f7] border-b border-[#e1e3e5] px-2 py-1 flex items-center gap-1 text-[13px] text-[#616161] flex-wrap">
-                  <select className="bg-transparent hover:bg-[#e4e5e7] rounded px-1.5 py-0.5 outline-none text-[12px] font-medium text-[#303030]">
+              {/* Rich Text Editor Toolbar matching Screenshot 1 */}
+              <div className="border border-[#c9cccf] rounded-xl overflow-hidden focus-within:border-[#005bd3] focus-within:ring-2 focus-within:ring-[#005bd3]/20 transition">
+                <div className="bg-[#fafafa] border-b border-[#e1e3e5] px-2.5 py-1.5 flex items-center gap-1.5 text-[13px] text-[#616161] flex-wrap">
+                  {/* Sparkles AI button */}
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-purple-600 transition" title="Generate text">
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                  <span className="w-px h-4 bg-[#e1e3e5] mx-0.5" />
+                  <select className="bg-transparent hover:bg-[#e4e5e7] rounded-md px-1.5 py-0.5 outline-none text-[12.5px] font-medium text-[#303030] cursor-pointer">
                     <option>Paragraph</option>
                     <option>Heading 1</option>
                     <option>Heading 2</option>
                   </select>
-                  <span className="w-px h-4 bg-[#e1e3e5] mx-1" />
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><Bold className="w-3.5 h-3.5" /></button>
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><Italic className="w-3.5 h-3.5" /></button>
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><Underline className="w-3.5 h-3.5" /></button>
-                  <span className="w-px h-4 bg-[#e1e3e5] mx-1" />
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><List className="w-3.5 h-3.5" /></button>
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><LinkIcon className="w-3.5 h-3.5" /></button>
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><ImageIcon className="w-3.5 h-3.5" /></button>
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><Video className="w-3.5 h-3.5" /></button>
-                  <span className="w-px h-4 bg-[#e1e3e5] mx-1" />
-                  <button className="p-1 hover:bg-[#e4e5e7] rounded text-[#303030]"><Code className="w-3.5 h-3.5" /></button>
+                  <span className="w-px h-4 bg-[#e1e3e5] mx-0.5" />
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030] font-bold"><Bold className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030] italic"><Italic className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030] underline"><Underline className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]">A ▾</button>
+                  <span className="w-px h-4 bg-[#e1e3e5] mx-0.5" />
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]"><List className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]"><LinkIcon className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]"><ImageIcon className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]"><Video className="w-3.5 h-3.5" /></button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]">田 ▾</button>
+                  <span className="w-px h-4 bg-[#e1e3e5] mx-0.5" />
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]">...</button>
+                  <button type="button" className="p-1 hover:bg-[#e4e5e7] rounded-md text-[#303030]"><Code className="w-3.5 h-3.5" /></button>
                 </div>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  placeholder=""
-                  className="w-full text-[13px] p-3 outline-none resize-y bg-white"
+                  rows={6}
+                  className="w-full text-[13px] p-3.5 outline-none resize-y bg-white min-h-[140px]"
                 />
               </div>
             </div>
           </div>
 
           {/* Card 2: Media */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-3">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Media</h3>
-            <div className="border-2 border-dashed border-[#c9cccf] rounded-xl p-6 text-center bg-[#fafafa] space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <button className="px-3.5 py-1.5 text-[13px] font-medium text-[#303030] bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-md transition shadow-2xs">
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Media</h3>
+            <div className="border border-dashed border-[#c9cccf] rounded-2xl p-7 text-center bg-[#fafafa] flex flex-col items-center justify-center gap-2.5">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 bg-white border border-[#c9cccf] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs hover:bg-[#f6f6f7] transition cursor-pointer"
+                >
                   Upload new
                 </button>
-                <button className="px-3.5 py-1.5 text-[13px] font-medium text-[#005bd3] hover:underline transition">
+                <button
+                  type="button"
+                  className="px-4 py-1.5 text-[#303030] hover:text-[#1a1a1a] rounded-xl text-[13px] font-medium transition cursor-pointer"
+                >
                   Select existing
                 </button>
               </div>
-              <div className="text-[12px] text-[#616161]">Accepts images, videos, or 3D models</div>
+              <p className="text-[12px] text-[#616161]">
+                Accepts images, videos, or 3D models
+              </p>
             </div>
           </div>
 
           {/* Card 3: Category */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Category</h3>
-            <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3] bg-white text-[#303030]">
-              <option>Choose a product category</option>
-              <option>Apparel & Accessories</option>
-              <option>Book & Media</option>
-              <option>Electronics</option>
-            </select>
-            <div className="text-[12px] text-[#616161]">
-              Determines tax rates and adds metafields to improve search, filters, and cross-channel sales
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Category</h3>
+            <div className="relative">
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white text-[#303030] cursor-pointer"
+              >
+                <option>Choose a product category</option>
+                <option>Apparel & Accessories</option>
+                <option>Shirts & Tops</option>
+                <option>Books & Media</option>
+                <option>Textbooks</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
             </div>
+            <p className="text-[12px] text-[#616161] pt-0.5">
+              Determines tax rates and adds metafields to improve search, filters, and cross-channel sales
+            </p>
           </div>
 
-          {/* Card 4: Price */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-4">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Price</h3>
+          {/* Card 4: Price matching Screenshot 2 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Price</h3>
 
             <div className="space-y-1">
-              <div className="relative max-w-[200px]">
-                <span className="absolute left-3 top-1.5 text-[13px] text-[#616161]">Rs</span>
+              <div className="relative max-w-[220px]">
+                <span className="absolute left-3.5 top-2 text-[13px] text-[#616161] font-medium">Rs</span>
                 <input
                   type="text"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full text-[13px] border border-[#c9cccf] rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3] bg-white font-medium text-[#1a1a1a]"
+                  className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-10 pr-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white font-medium text-[#1a1a1a]"
                 />
               </div>
             </div>
 
-            {/* Additional display prices (Screenshots 3 & 4) */}
-            <div className="border-t border-[#f1f2f4] pt-3 space-y-3">
+            {/* Expandable Pill Bar matching Screenshot 2 */}
+            <div className="bg-[#f6f6f7] border border-[#e1e3e5] rounded-2xl p-2 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPricePillExpanded(true);
+                    setActivePriceField("compareAt");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activePriceField === "compareAt" || compareAtPrice
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  Compare-at
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPricePillExpanded(true);
+                    setActivePriceField("unitPrice");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activePriceField === "unitPrice" || unitPrice
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  Unit price
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChargeTax(!chargeTax)}
+                  className="px-3 py-1 bg-white border border-transparent hover:border-[#c9cccf] rounded-xl text-[12.5px] font-medium text-[#303030] flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <span>Charge tax</span>
+                  <span className="bg-[#e4e5e7] text-[#1a1a1a] text-[11px] px-1.5 py-0.2 rounded font-semibold">
+                    {chargeTax ? "Yes" : "No"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPricePillExpanded(true);
+                    setActivePriceField("costPerItem");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activePriceField === "costPerItem" || costPerItem
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  Cost per item
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setIsPriceAccordionOpen(!isPriceAccordionOpen)}
-                className="w-full flex items-center justify-between text-[12px] font-semibold text-[#616161] hover:text-[#1a1a1a]"
+                onClick={() => setIsPricePillExpanded(!isPricePillExpanded)}
+                className="p-1 rounded-lg text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition"
               >
-                <span>Additional display prices</span>
-                <ChevronUp className={cn("w-4 h-4 transition", !isPriceAccordionOpen && "rotate-180")} />
+                <ChevronDown className={cn("w-4 h-4 transition-transform", isPricePillExpanded && "rotate-180")} />
               </button>
+            </div>
 
-              {isPriceAccordionOpen && (
-                <div className="space-y-3 pt-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-medium text-[#303030] flex items-center gap-1">
-                        Compare-at price
-                        <HelpCircle className="w-3.5 h-3.5 text-[#616161]" />
-                      </label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1.5 text-[13px] text-[#616161]">Rs</span>
-                        <input
-                          type="text"
-                          value={compareAtPrice}
-                          onChange={(e) => setCompareAtPrice(e.target.value)}
-                          className="w-full text-[13px] border border-[#c9cccf] rounded-lg pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3] bg-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-medium text-[#303030]">Unit price</label>
-                      <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3] bg-white text-[#616161]">
-                        <option>--</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <label className="flex items-center gap-2 text-[13px] text-[#1a1a1a] cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={chargeTax}
-                      onChange={(e) => setChargeTax(e.target.checked)}
-                      className="rounded border-[#c9cccf]"
-                    />
-                    <span>Charge tax on this product</span>
+            {/* Expanded Price Fields */}
+            {isPricePillExpanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 animate-in fade-in duration-150">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030] flex items-center gap-1">
+                    Compare-at price
+                    <HelpCircle className="w-3.5 h-3.5 text-[#616161]" />
                   </label>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="bg-[#f1f2f4] text-[#616161] text-[12px] px-3 py-1 rounded-md">Cost --</span>
-                    <span className="bg-[#f1f2f4] text-[#616161] text-[12px] px-3 py-1 rounded-md">Profit --</span>
-                    <span className="bg-[#f1f2f4] text-[#616161] text-[12px] px-3 py-1 rounded-md">Margin --</span>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <input
+                      type="text"
+                      value={compareAtPrice}
+                      onChange={(e) => setCompareAtPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Unit price</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <input
+                      type="text"
+                      value={unitPrice}
+                      onChange={(e) => setUnitPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Cost per item</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <input
+                      type="text"
+                      value={costPerItem}
+                      onChange={(e) => setCostPerItem(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Card 5: Inventory */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-4">
+          {/* Card 5: Inventory matching Screenshot 2 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Inventory</h3>
-              <label className="flex items-center gap-2 text-[12px] text-[#616161] cursor-pointer">
-                <span>Inventory tracked</span>
-                <input
-                  type="checkbox"
-                  checked={trackInventory}
-                  onChange={(e) => setTrackInventory(e.target.checked)}
-                  className="w-4 h-4 accent-[#1a1a1a]"
-                />
-              </label>
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Inventory</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] font-medium text-[#303030]">Inventory tracked</span>
+                {/* Polaris Toggle Switch */}
+                <button
+                  type="button"
+                  onClick={() => setTrackInventory(!trackInventory)}
+                  className={cn(
+                    "w-11 h-6 rounded-full transition-colors relative cursor-pointer p-0.5",
+                    trackInventory ? "bg-[#1a1a1a]" : "bg-[#c9cccf]"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-5 h-5 bg-white rounded-full transition-transform shadow-xs",
+                      trackInventory ? "translate-x-5" : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
             </div>
 
-            {/* Location Quantity Box */}
-            <div className="border border-[#e1e3e5] rounded-lg overflow-hidden bg-white text-[13px]">
-              <div className="bg-[#fafafa] px-3 py-2 text-[12px] font-semibold text-[#616161] flex justify-between border-b border-[#e1e3e5]">
+            {/* Quantity Table Box matching Screenshot 2 */}
+            <div className="border border-[#e1e3e5] rounded-2xl overflow-hidden bg-white text-[13px]">
+              <div className="bg-[#f6f6f7] px-4 py-2 text-[12px] font-semibold text-[#616161] flex justify-between border-b border-[#e1e3e5]">
                 <span>Quantity</span>
                 <span>Quantity</span>
               </div>
-              <div className="p-3 flex items-center justify-between">
+              <div className="p-4 flex items-center justify-between">
                 <span className="font-medium text-[#1a1a1a]">135/79 Neelammahara Road</span>
                 <input
                   type="text"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className="w-24 text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1 text-center outline-none focus:border-[#005bd3]"
+                  className="w-24 text-[13px] border border-[#c9cccf] rounded-xl px-3 py-1.5 text-center outline-none focus:border-[#005bd3] font-medium"
                 />
               </div>
             </div>
 
-            {/* More Details Expandable Accordion (Screenshots 4 & 5) */}
-            <div className="border-t border-[#f1f2f4] pt-3 space-y-3">
+            {/* Expandable Pill Bar matching Screenshot 2 */}
+            <div className="bg-[#f6f6f7] border border-[#e1e3e5] rounded-2xl p-2 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsInventoryPillExpanded(true);
+                    setActiveInventoryField("sku");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activeInventoryField === "sku" || sku
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  SKU
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsInventoryPillExpanded(true);
+                    setActiveInventoryField("barcode");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activeInventoryField === "barcode" || barcode
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  Barcode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContinueSelling(!continueSelling)}
+                  className="px-3 py-1 bg-white border border-transparent hover:border-[#c9cccf] rounded-xl text-[12.5px] font-medium text-[#303030] flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <span>Sell when out of stock</span>
+                  <span className="bg-[#e4e5e7] text-[#1a1a1a] text-[11px] px-1.5 py-0.2 rounded font-semibold">
+                    {continueSelling ? "On" : "Off"}
+                  </span>
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setIsInventoryAccordionOpen(!isInventoryAccordionOpen)}
-                className="w-full flex items-center justify-between text-[12px] font-semibold text-[#616161] hover:text-[#1a1a1a]"
+                onClick={() => setIsInventoryPillExpanded(!isInventoryPillExpanded)}
+                className="p-1 rounded-lg text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition"
               >
-                <span>More details</span>
-                <ChevronUp className={cn("w-4 h-4 transition", !isInventoryAccordionOpen && "rotate-180")} />
+                <ChevronDown className={cn("w-4 h-4 transition-transform", isInventoryPillExpanded && "rotate-180")} />
+              </button>
+            </div>
+
+            {/* Expanded Inventory Fields */}
+            {isInventoryPillExpanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 animate-in fade-in duration-150">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">SKU (Stock Keeping Unit)</label>
+                  <input
+                    type="text"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-1.5 outline-none focus:border-[#005bd3]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Barcode (ISBN, UPC, GTIN, etc.)</label>
+                  <input
+                    type="text"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-1.5 outline-none focus:border-[#005bd3]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Card 6: Shipping matching Screenshot 3 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Shipping</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-[12.5px] font-medium text-[#303030]">Physical product</span>
+                {/* Polaris Toggle Switch */}
+                <button
+                  type="button"
+                  onClick={() => setIsPhysicalProduct(!isPhysicalProduct)}
+                  className={cn(
+                    "w-11 h-6 rounded-full transition-colors relative cursor-pointer p-0.5",
+                    isPhysicalProduct ? "bg-[#1a1a1a]" : "bg-[#c9cccf]"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-5 h-5 bg-white rounded-full transition-transform shadow-xs",
+                      isPhysicalProduct ? "translate-x-5" : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {isPhysicalProduct && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030] flex items-center gap-1">
+                    Package <Info className="w-3.5 h-3.5 text-[#616161]" />
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedPackage}
+                      onChange={(e) => setSelectedPackage(e.target.value)}
+                      className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-8 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] truncate"
+                    >
+                      <option>Store default • Sample box - 22 × 13.7 × 4.2 cm, 0 kg</option>
+                    </select>
+                    <Lock className="w-3.5 h-3.5 text-[#616161] absolute left-3 top-3 pointer-events-none" />
+                    <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Product weight</label>
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={productWeight}
+                      onChange={(e) => setProductWeight(e.target.value)}
+                      className="w-full text-[13px] border border-r-0 border-[#c9cccf] rounded-l-xl px-3 py-2 outline-none focus:border-[#005bd3] bg-white"
+                    />
+                    <select
+                      value={weightUnit}
+                      onChange={(e) => setWeightUnit(e.target.value)}
+                      className="text-[13px] border border-[#c9cccf] rounded-r-xl px-2 py-2 outline-none bg-[#f6f6f7] text-[#303030] cursor-pointer"
+                    >
+                      <option>kg</option>
+                      <option>lb</option>
+                      <option>oz</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Expandable Pill Bar matching Screenshot 3 */}
+            <div className="bg-[#f6f6f7] border border-[#e1e3e5] rounded-2xl p-2 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsShippingPillExpanded(true);
+                    setActiveShippingField("countryOrigin");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activeShippingField === "countryOrigin" || countryOrigin
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  Country of origin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsShippingPillExpanded(true);
+                    setActiveShippingField("hsCode");
+                  }}
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[12.5px] font-medium transition cursor-pointer border",
+                    activeShippingField === "hsCode" || hsCode
+                      ? "bg-white border-[#c9cccf] text-[#1a1a1a] shadow-2xs"
+                      : "bg-white border-transparent text-[#303030] hover:bg-[#e4e5e7]"
+                  )}
+                >
+                  HS Code
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsShippingPillExpanded(!isShippingPillExpanded)}
+                className="p-1 rounded-lg text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition"
+              >
+                <ChevronDown className={cn("w-4 h-4 transition-transform", isShippingPillExpanded && "rotate-180")} />
+              </button>
+            </div>
+
+            {/* Expanded Shipping Fields */}
+            {isShippingPillExpanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 animate-in fade-in duration-150">
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Country/Region of origin</label>
+                  <input
+                    type="text"
+                    value={countryOrigin}
+                    onChange={(e) => setCountryOrigin(e.target.value)}
+                    placeholder="Select country"
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-1.5 outline-none focus:border-[#005bd3]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[12px] font-medium text-[#303030]">Harmonized System (HS) code</label>
+                  <input
+                    type="text"
+                    value={hsCode}
+                    onChange={(e) => setHsCode(e.target.value)}
+                    placeholder="Search HS code"
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-1.5 outline-none focus:border-[#005bd3]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Card 7: Variants matching Screenshot 3 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Variants</h3>
+            <button
+              type="button"
+              className="w-full border border-[#c9cccf] rounded-xl p-3 text-left hover:bg-[#fafafa] transition cursor-pointer flex items-center gap-2 bg-white"
+            >
+              <div className="w-5 h-5 rounded-full border border-[#c9cccf] flex items-center justify-center text-[#616161]">
+                <Plus className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[13px] font-medium text-[#303030]">Add options like size or color</span>
+            </button>
+          </div>
+
+          {/* Card 8: Product metafields matching Screenshot 3 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Product metafields</h3>
+              <button
+                type="button"
+                className="px-3 py-1.5 text-[12.5px] font-semibold border border-[#c9cccf] rounded-xl bg-white hover:bg-[#f6f6f7] text-[#303030] transition shadow-2xs cursor-pointer"
+              >
+                Add definition
+              </button>
+            </div>
+            <div>
+              <button
+                type="button"
+                className="bg-[#f6f6f7] border border-[#e1e3e5] text-[#303030] text-[12.5px] font-medium px-3 py-1 rounded-xl hover:bg-[#e4e5e7] transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 text-[#616161]" />
+                <span>Disclosures</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 9: Search engine listing matching Screenshot 3 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Search engine listing</h3>
+              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] p-1 rounded-md transition cursor-pointer">
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-[12.5px] text-[#616161]">
+              Add a title and description to see how this product might appear in a search engine listing
+            </p>
+          </div>
+        </div>
+
+        {/* Right Sidebar Column (~32%) */}
+        <div className="space-y-4">
+          
+          {/* Card 1: Status matching Screenshot 1 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2 relative" ref={statusDropdownRef}>
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Status</h3>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                className="w-full flex items-center justify-between border border-[#c9cccf] rounded-xl px-3.5 py-2 bg-white text-[13px] text-[#303030] font-medium hover:bg-[#f6f6f7] transition cursor-pointer"
+              >
+                <span>{selectedStatus}</span>
+                <ChevronDown className="w-4 h-4 text-[#616161]" />
               </button>
 
-              {isInventoryAccordionOpen && (
-                <div className="space-y-3 pt-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-medium text-[#303030]">SKU (Stock Keeping Unit)</label>
-                      <input
-                        type="text"
-                        value={sku}
-                        onChange={(e) => setSku(e.target.value)}
-                        className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3]"
-                      />
+              {/* Popover */}
+              {isStatusDropdownOpen && (
+                <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-[#e1e3e5] rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in-0 zoom-in-95 duration-100 flex flex-col gap-1 text-[13px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStatus("Active");
+                      setIsStatusDropdownOpen(false);
+                    }}
+                    className={cn(
+                      "w-full text-left p-2.5 rounded-xl transition flex flex-col gap-0.5 cursor-pointer",
+                      selectedStatus === "Active" ? "bg-[#f1f2f4] font-semibold" : "hover:bg-[#f6f6f7]"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-[#1a1a1a]">
+                      {selectedStatus === "Active" && <Check className="w-4 h-4 text-[#1a1a1a]" />}
+                      <span>Active</span>
                     </div>
+                    <div className="text-[11.5px] text-[#616161] pl-6">Sell via selected sales channels and markets</div>
+                  </button>
 
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-medium text-[#303030]">Barcode (ISBN, UPC, GTIN, etc.)</label>
-                      <input
-                        type="text"
-                        value={barcode}
-                        onChange={(e) => setBarcode(e.target.value)}
-                        className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3]"
-                      />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStatus("Draft");
+                      setIsStatusDropdownOpen(false);
+                    }}
+                    className={cn(
+                      "w-full text-left p-2.5 rounded-xl transition flex flex-col gap-0.5 cursor-pointer",
+                      selectedStatus === "Draft" ? "bg-[#f1f2f4] font-semibold" : "hover:bg-[#f6f6f7]"
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-[#1a1a1a]">
+                      {selectedStatus === "Draft" && <Check className="w-4 h-4 text-[#1a1a1a]" />}
+                      <span>Draft</span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-2 text-[13px] text-[#1a1a1a] cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={continueSelling}
-                        onChange={(e) => setContinueSelling(e.target.checked)}
-                        className="rounded border-[#c9cccf]"
-                      />
-                      <span>Continue selling when out of stock</span>
-                    </label>
-
-                    <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-medium px-2 py-0.5 rounded inline-flex items-center gap-1">
-                      <Info className="w-3 h-3 text-[#616161]" /> POS excluded
-                    </span>
-                  </div>
+                    <div className="text-[11.5px] text-[#616161] pl-6">Not visible on selected sales channels or markets</div>
+                  </button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Card 6: Shipping */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-4">
+          {/* Card 2: Publishing matching Screenshot 1 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Shipping</h3>
-              <label className="flex items-center gap-2 text-[12px] text-[#616161] cursor-pointer">
-                <span>Physical product</span>
-                <input
-                  type="checkbox"
-                  checked={isPhysicalProduct}
-                  onChange={(e) => setIsPhysicalProduct(e.target.checked)}
-                  className="w-4 h-4 accent-[#1a1a1a]"
-                />
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2 space-y-1">
-                <label className="text-[12px] font-medium text-[#303030] flex items-center gap-1">
-                  Package <Info className="w-3.5 h-3.5 text-[#616161]" />
-                </label>
-                <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] bg-white text-[#303030]">
-                  <option>🏬 Store default • Sample box - 22 × 13.7 × 4.2 cm, 0 kg</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[12px] font-medium text-[#303030]">Product weight</label>
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    value={productWeight}
-                    onChange={(e) => setProductWeight(e.target.value)}
-                    className="w-full text-[13px] border border-r-0 border-[#c9cccf] rounded-l-lg px-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
-                  />
-                  <select className="text-[13px] border border-[#c9cccf] rounded-r-lg px-2 py-1.5 outline-none bg-[#f6f6f7] text-[#303030]">
-                    <option>kg</option>
-                    <option>lb</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-[#f1f2f4] pt-3 flex items-center justify-between text-[12px] font-semibold text-[#616161]">
-              <div className="flex items-center gap-2">
-                <button className="bg-[#f1f2f4] px-2.5 py-1 rounded-md hover:bg-[#e4e5e7] transition text-[#303030]">Country of origin</button>
-                <button className="bg-[#f1f2f4] px-2.5 py-1 rounded-md hover:bg-[#e4e5e7] transition text-[#303030]">HS Code</button>
-              </div>
-              <ChevronDown className="w-4 h-4 cursor-pointer" />
-            </div>
-          </div>
-
-          {/* Card 7: Variants */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Variants</h3>
-            <button className="text-[13px] font-medium text-[#303030] hover:text-[#1a1a1a] flex items-center gap-1.5 transition">
-              <Plus className="w-4 h-4 text-[#616161]" />
-              <span>Add options like size or color</span>
-            </button>
-          </div>
-
-          {/* Card 8: Product metafields */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Product metafields</h3>
-              <button className="px-2.5 py-1 text-[12px] font-medium border border-[#c9cccf] rounded-md bg-white hover:bg-[#f6f6f7] text-[#303030] transition shadow-2xs">
-                Add definition
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Publishing</h3>
+              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] p-1 rounded-md transition cursor-pointer">
+                <Settings className="w-4 h-4" />
               </button>
             </div>
-            <div>
-              <button className="bg-[#f1f2f4] text-[#303030] text-[12px] font-medium px-2.5 py-1 rounded-md hover:bg-[#e4e5e7] transition inline-flex items-center gap-1">
-                <Plus className="w-3.5 h-3.5 text-[#616161]" /> Disclosures
-              </button>
-            </div>
-          </div>
-
-          {/* Card 9: Search Engine Listing */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Search engine listing</h3>
-              <button className="text-[#616161] hover:text-[#1a1a1a] transition">
-                <Edit2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="text-[12px] text-[#616161]">
-              Add a title and description to see how this product might appear in a search engine listing
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (Sidebar Cards) */}
-        <div className="space-y-4">
-          {/* Card 1: Status (Screenshot 2) */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2 relative" ref={statusDropdownRef}>
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Status</h3>
-            <button
-              onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
-              className="w-full flex items-center justify-between border border-[#c9cccf] rounded-lg px-3 py-1.5 bg-white text-[13px] text-[#303030] font-medium hover:bg-[#f6f6f7] transition"
-            >
-              <span>{selectedStatus}</span>
-              <ChevronDown className="w-4 h-4 text-[#616161]" />
-            </button>
-
-            {/* Status Dropdown Popover (Screenshot 2) */}
-            {isStatusDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#e1e3e5] rounded-xl shadow-xl p-1.5 z-50 animate-in fade-in duration-100 flex flex-col gap-1 text-[13px]">
-                <button
-                  onClick={() => {
-                    setSelectedStatus("Active");
-                    setIsStatusDropdownOpen(false);
-                  }}
-                  className={cn(
-                    "w-full text-left p-2 rounded-lg transition flex flex-col gap-0.5",
-                    selectedStatus === "Active" ? "bg-[#f1f2f4] font-semibold" : "hover:bg-[#f6f6f7]"
-                  )}
-                >
-                  <div className="flex items-center gap-2 text-[#1a1a1a]">
-                    {selectedStatus === "Active" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                    <span>Active</span>
-                  </div>
-                  <div className="text-[11px] text-[#616161] pl-5">Sell via selected sales channels and markets</div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedStatus("Draft");
-                    setIsStatusDropdownOpen(false);
-                  }}
-                  className={cn(
-                    "w-full text-left p-2 rounded-lg transition flex flex-col gap-0.5",
-                    selectedStatus === "Draft" ? "bg-[#f1f2f4] font-semibold" : "hover:bg-[#f6f6f7]"
-                  )}
-                >
-                  <div className="flex items-center gap-2 text-[#1a1a1a]">
-                    {selectedStatus === "Draft" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                    <span>Draft</span>
-                  </div>
-                  <div className="text-[11px] text-[#616161] pl-5">Not visible on selected sales channels or markets</div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedStatus("Unlisted");
-                    setIsStatusDropdownOpen(false);
-                  }}
-                  className={cn(
-                    "w-full text-left p-2 rounded-lg transition flex flex-col gap-0.5",
-                    selectedStatus === "Unlisted" ? "bg-[#f1f2f4] font-semibold" : "hover:bg-[#f6f6f7]"
-                  )}
-                >
-                  <div className="flex items-center gap-2 text-[#1a1a1a]">
-                    {selectedStatus === "Unlisted" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                    <span>Unlisted</span>
-                  </div>
-                  <div className="text-[11px] text-[#616161] pl-5">Accessible only by direct link</div>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Card 2: Publishing */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Publishing</h3>
-              <button className="text-[#616161] hover:text-[#1a1a1a] transition">
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <div className="text-[12px] font-medium text-[#303030] flex items-center gap-1.5">
-              <span>📢</span>
+            <div className="text-[13px] font-medium text-[#303030] flex items-center gap-2 pt-1">
+              <Users className="w-4 h-4 text-[#616161]" />
               <span>All channels</span>
             </div>
           </div>
 
-          {/* Card 3: Product organization */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center gap-1 text-[13px] font-semibold text-[#1a1a1a]">
+          {/* Card 3: Product organization matching Screenshot 1 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3.5">
+            <div className="flex items-center justify-between text-[13.5px] font-semibold text-[#1a1a1a]">
               <span>Product organization</span>
-              <Info className="w-3.5 h-3.5 text-[#616161]" />
+              <Info className="w-4 h-4 text-[#616161]" />
             </div>
 
             <div className="space-y-1">
               <label className="text-[12px] font-medium text-[#303030]">Type</label>
-              <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] bg-white text-[#303030]">
-                <option>None</option>
-                <option>Apparel</option>
-                <option>Book</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={productType}
+                  onChange={(e) => setProductType(e.target.value)}
+                  className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
+                >
+                  <option>None</option>
+                  <option>Apparel</option>
+                  <option>Book</option>
+                  <option>Textbook</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-[12px] font-medium text-[#303030]">Vendor</label>
-              <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] bg-white text-[#303030]">
-                <option>None</option>
-                <option>Learnix LK</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={vendor}
+                  onChange={(e) => setVendor(e.target.value)}
+                  className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
+                >
+                  <option>None</option>
+                  <option>Learnix LK</option>
+                  <option>Oxford Press</option>
+                  <option>Pearson</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
+              </div>
             </div>
 
             <div className="space-y-1">
               <label className="text-[12px] font-medium text-[#303030]">Collections</label>
-              <button className="w-full text-left text-[13px] font-medium text-[#303030] bg-[#f1f2f4] hover:bg-[#e4e5e7] rounded-lg px-3 py-1.5 transition flex items-center gap-1.5">
-                <Plus className="w-3.5 h-3.5 text-[#616161]" />
+              <button
+                type="button"
+                onClick={() => setIsCollectionModalOpen(true)}
+                className="w-full text-left text-[13px] font-medium text-[#303030] border border-[#c9cccf] bg-white hover:bg-[#fafafa] rounded-xl px-3.5 py-2 transition flex items-center gap-2 cursor-pointer"
+              >
+                <div className="w-5 h-5 rounded-full border border-[#c9cccf] flex items-center justify-center text-[#616161]">
+                  <Plus className="w-3.5 h-3.5" />
+                </div>
                 <span>Add collections</span>
               </button>
             </div>
 
             <div className="space-y-1">
               <label className="text-[12px] font-medium text-[#303030]">Tags</label>
-              <button className="w-full text-left text-[13px] font-medium text-[#303030] bg-[#f1f2f4] hover:bg-[#e4e5e7] rounded-lg px-3 py-1.5 transition flex items-center gap-1.5">
-                <Plus className="w-3.5 h-3.5 text-[#616161]" />
-                <span>Add tags</span>
-              </button>
+              {isAddingTag ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddTag();
+                    }}
+                    placeholder="Enter tag name"
+                    autoFocus
+                    className="w-full text-[13px] border border-[#005bd3] rounded-xl px-3 py-1.5 outline-none"
+                  />
+                  <button type="button" onClick={handleAddTag} className="p-1.5 bg-[#1a1a1a] text-white rounded-lg">
+                    <Check className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingTag(true)}
+                  className="w-full text-left text-[13px] font-medium text-[#303030] border border-[#c9cccf] bg-white hover:bg-[#fafafa] rounded-xl px-3.5 py-2 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <div className="w-5 h-5 rounded-full border border-[#c9cccf] flex items-center justify-center text-[#616161]">
+                    <Plus className="w-3.5 h-3.5" />
+                  </div>
+                  <span>Add tags</span>
+                </button>
+              )}
+
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {tags.map((t) => (
+                    <span key={t} className="bg-[#f1f2f4] text-[#1a1a1a] text-[12px] px-2.5 py-1 rounded-xl font-medium flex items-center gap-1">
+                      {t}
+                      <X className="w-3 h-3 cursor-pointer text-[#616161] hover:text-[#1a1a1a]" onClick={() => setTags(tags.filter((tag) => tag !== t))} />
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Card 4: Theme template */}
-          <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl p-4 shadow-2xs space-y-2">
-            <h3 className="text-[13px] font-semibold text-[#1a1a1a]">Theme template</h3>
-            <select className="w-full text-[13px] border border-[#c9cccf] rounded-lg px-3 py-1.5 outline-none focus:border-[#005bd3] bg-white text-[#303030]">
-              <option>Default product</option>
-            </select>
+          {/* Card 4: Theme template matching Screenshot 2 */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Theme template</h3>
+            <div className="relative">
+              <select
+                value={themeTemplate}
+                onChange={(e) => setThemeTemplate(e.target.value)}
+                className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
+              >
+                <option>Default product</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Floating Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-[#e1e3e5] px-6 py-3 flex items-center justify-end z-40">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/admin/products")}
+            className="px-4 py-1.5 border border-[#c9cccf] rounded-xl text-[13px] font-medium text-[#303030] hover:bg-[#f6f6f7] bg-white transition cursor-pointer"
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="px-5 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+
+      {/* Collection Modal Integration */}
+      <CollectionModal
+        isOpen={isCollectionModalOpen}
+        mode="add"
+        selectedCount={1}
+        onClose={() => setIsCollectionModalOpen(false)}
+        onSave={(collectionIds) => {
+          setSelectedCollections(collectionIds);
+          setIsCollectionModalOpen(false);
+        }}
+      />
     </div>
   );
 }

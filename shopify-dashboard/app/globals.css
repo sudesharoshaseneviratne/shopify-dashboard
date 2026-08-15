@@ -98,9 +98,96 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* --- Premium Custom Smooth Checkbox Styling --- */
 input[type="checkbox"] {
-  accent-color: #1a1a1a;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid #a1a1aa;
+  border-radius: 5px;
+  outline: none;
   cursor: pointer;
+  background-color: #ffffff;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  shrink: 0;
+}
+
+input[type="checkbox"]:hover {
+  border-color: #303030;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+input[type="checkbox"]:focus-visible {
+  border-color: #005bd3;
+  box-shadow: 0 0 0 3px rgba(0, 91, 211, 0.2);
+}
+
+input[type="checkbox"]:checked {
+  background-color: #1a1a1a;
+  border-color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1px;
+  width: 5.5px;
+  height: 9.5px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(1);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input[type="checkbox"]:indeterminate {
+  background-color: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+input[type="checkbox"]:indeterminate::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 2px;
+  background-color: #ffffff;
+  border-radius: 1px;
+}
+
+/* --- Bulk Editor Custom Horizontal Scrollbar --- */
+.bulk-editor-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f2f4;
+}
+
+.bulk-editor-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.bulk-editor-scroll::-webkit-scrollbar-track {
+  background: #f1f2f4;
+  border-radius: 4px;
+}
+
+.bulk-editor-scroll::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.bulk-editor-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
 
 /* --- Base Container & Canvas --- */
@@ -132,6 +219,7 @@ input[type="checkbox"] {
   color: var(--p-color-text-secondary);
   text-transform: none; /* Sentence case, NOT uppercase */
   text-align: left;
+  vertical-align: middle;
   padding: 5px 12px;
   border-bottom: 1px solid var(--p-color-border);
   white-space: nowrap;
@@ -140,11 +228,14 @@ input[type="checkbox"] {
 .polaris-table td {
   font-size: var(--p-font-size-200);
   color: var(--p-color-text);
+  vertical-align: middle;
   padding: 4px 12px;
   height: 34px;
   border-bottom: 1px solid var(--p-color-border-subtle);
   white-space: nowrap;
 }
+
+
 
 .polaris-table tr:hover {
   background-color: var(--p-color-bg-surface-hover);

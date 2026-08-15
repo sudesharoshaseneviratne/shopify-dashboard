@@ -22,14 +22,8 @@ const mainNavItems = [
   { name: "Products", href: "/admin/products", icon: ProductIcon, filledIcon: ProductFilledIcon, subItems: [
     { name: "Collections", href: "/admin/products/collections" },
     { name: "Inventory", href: "/admin/products/inventory" },
-    { name: "Purchase orders", href: "/admin/products/purchase-orders" },
-    { name: "Transfers", href: "/admin/products/transfers" },
-    { name: "Gift cards", href: "/admin/products/gift-cards" },
   ]},
-  { name: "Customers", href: "/admin/customers", icon: PersonIcon, filledIcon: PersonFilledIcon, subItems: [
-    { name: "Segments", href: "/admin/customers/segments" },
-    { name: "Companies", href: "/admin/customers/companies" },
-  ]},
+  { name: "Customers", href: "/admin/customers", icon: PersonIcon, filledIcon: PersonFilledIcon },
   { name: "Discounts", href: "/admin/discounts", icon: DiscountIcon, filledIcon: DiscountFilledIcon },
   { name: "Content", href: "/admin/content/metaobjects", icon: ContentIcon, filledIcon: ContentFilledIcon, subItems: [
     { name: "Metaobjects", href: "/admin/content/metaobjects" },
@@ -93,8 +87,8 @@ export function Sidebar() {
                 )}
               </Link>
 
-              {/* Render Sub-items (Only when active) */}
-              {item.subItems && isExpanded && (
+              {/* Render Sub-items (Always expanded) */}
+              {item.subItems && (
                 <div className="ml-7 flex flex-col gap-0.5 mt-0.5 mb-1">
                   {item.subItems.map((sub) => {
                     const isSubActive =

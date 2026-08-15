@@ -460,21 +460,36 @@ export default function Drafts() {
         {/* Table Container */}
         <div className="overflow-x-auto">
           <table className="polaris-table w-full">
+            <colgroup>
+              <col style={{ width: "36px" }} />
+              <col style={{ width: "120px" }} />
+              {isColVisible("date") && <col style={{ width: "22%" }} />}
+              {isColVisible("customer") && <col style={{ width: "35%" }} />}
+              {isColVisible("status") && <col style={{ width: "20%" }} />}
+              {isColVisible("total") && <col style={{ width: "23%" }} />}
+            </colgroup>
             <thead>
               {selectedIds.size > 0 ? (
-                /* Bulk Action Header Row */
-                <tr className="border-b border-[#e1e3e5] bg-white select-none h-[44px]">
-                  <th colSpan={100} className="px-3 py-1 font-normal text-left h-[44px] align-middle">
+                /* Bulk Action Header Row matching Products Page */
+                <tr className="bg-[#f1f2f4] border-b border-[#e1e3e5] h-[48px] text-[13px] text-[#1a1a1a] font-medium select-none">
+                  <th className="pl-3 pr-1 align-middle text-left">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      onChange={toggleSelectAll}
+                      className="rounded-[4px] border-[#c9cccf] cursor-pointer accent-[#1a1a1a] w-4 h-4"
+                    />
+                  </th>
+                  <th colSpan={99} className="pl-1 pr-3 align-middle py-1.5">
                     <div className="flex items-center justify-between w-full relative z-30">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        {/* Selection count dropdown button */}
                         <div ref={bulkSelectionRef} className="relative">
                           <button
+                            type="button"
                             onClick={() => setIsBulkSelectionMenuOpen(!isBulkSelectionMenuOpen)}
-                            className="bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] text-[13px] font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-2xs transition"
+                            className="flex items-center gap-1.5 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer"
                           >
-                            <span className="w-3.5 h-3.5 rounded bg-[#1a1a1a] flex items-center justify-center text-white shrink-0">
-                              <span className="w-2 h-0.5 bg-white rounded-full" />
-                            </span>
                             <span>{selectedIds.size} selected</span>
                             <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
                           </button>
@@ -509,7 +524,7 @@ export default function Drafts() {
               ) : (
                 /* Regular Column Headers Row */
                 <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#f7f7f7] select-none h-[44px]">
-                  <th className="px-3 py-1.5 w-10 h-[44px] align-middle">
+                  <th className="pl-3 pr-1 py-1.5 w-9 align-middle text-left">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -518,7 +533,7 @@ export default function Drafts() {
                     />
                   </th>
                   {isColVisible("id") && (
-                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("id")}>
+                    <th className="pl-1 pr-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-left" onClick={() => handleSort("id")}>
                       Draft order {renderSortIndicator("id")}
                     </th>
                   )}
@@ -538,7 +553,7 @@ export default function Drafts() {
                     </th>
                   )}
                   {isColVisible("total") && (
-                    <th className="px-3 py-1.5 !text-right cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle" onClick={() => handleSort("total")}>
+                    <th className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-left" onClick={() => handleSort("total")}>
                       Total {renderSortIndicator("total")}
                     </th>
                   )}
@@ -589,7 +604,7 @@ export default function Drafts() {
                         selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
                       }`}
                     >
-                      <td className="px-3 py-1">
+                      <td className="pl-3 pr-1 py-1 align-middle text-left">
                         <input
                           type="checkbox"
                           checked={selected}
@@ -599,7 +614,7 @@ export default function Drafts() {
                         />
                       </td>
                       {isColVisible("id") && (
-                        <td className="px-3 py-1 font-medium text-[#1a1a1a]">
+                        <td className="pl-1 pr-3 py-1 font-medium text-[#1a1a1a]">
                           <Link
                             href={`/admin/orders/drafts/${d.id.replace('#', '')}`}
                             className="hover:underline font-semibold text-[#1a1a1a]"
@@ -620,7 +635,7 @@ export default function Drafts() {
                           </Badge>
                         </td>
                       )}
-                      {isColVisible("total") && <td className="px-3 py-1 text-[#1a1a1a] font-medium !text-right">{d.total}</td>}
+                      {isColVisible("total") && <td className="px-3 py-1 text-[#1a1a1a] font-medium text-left">{d.total}</td>}
                     </tr>
                   );
                 })

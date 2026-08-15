@@ -7,9 +7,14 @@ import { Sidebar } from "@/components/admin/Sidebar";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/admin/login" || pathname === "/login";
+  const isBulkEditor = pathname?.startsWith("/admin/products/bulk-editor") || pathname?.startsWith("/admin/bulk-editor");
 
   if (isLoginPage) {
     return <div className="w-full min-h-screen bg-[#0b0d0e]">{children}</div>;
+  }
+
+  if (isBulkEditor) {
+    return <div className="w-screen h-screen overflow-hidden bg-white text-[#1a1a1a] select-none">{children}</div>;
   }
 
   return (

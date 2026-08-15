@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type BadgeVariant = "warning" | "amber" | "danger" | "success" | "neutral" | "attention" | "default";
+export type BadgeVariant = "warning" | "amber" | "danger" | "success" | "neutral" | "attention" | "default" | "draft" | "info" | "unlisted";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -20,16 +20,22 @@ export function Badge({ children, variant = "default", icon = "none", className 
     success: "bg-[#a6f4c5] text-[#064e3b]",
     neutral: "bg-[#f1f2f4] text-[#303030]",
     default: "bg-[#f1f2f4] text-[#303030]",
+    draft: "bg-[#d5ebff] text-[#004085]",
+    info: "bg-[#d5ebff] text-[#004085]",
+    unlisted: "bg-[#e2e8f0] text-[#334155]",
   };
 
   const dotColors = {
     warning: "bg-[#3b2000]",
     amber: "bg-[#3d2b00]",
-    attention: "bg-[#4a1a00]",
+    attention: "bg-[#3d2b00]",
     danger: "bg-[#8c1d18]",
     success: "bg-[#053818]",
     neutral: "bg-[#616161]",
     default: "bg-[#616161]",
+    draft: "bg-[#004085]",
+    info: "bg-[#004085]",
+    unlisted: "bg-[#334155]",
   };
 
   const ringColors = {
@@ -40,6 +46,9 @@ export function Badge({ children, variant = "default", icon = "none", className 
     success: "border-[#053818]",
     neutral: "border-[#616161]",
     default: "border-[#616161]",
+    draft: "border-[#004085]",
+    info: "border-[#004085]",
+    unlisted: "border-[#334155]",
   };
 
   return (
