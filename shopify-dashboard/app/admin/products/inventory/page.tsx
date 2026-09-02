@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { InventoryIcon } from "@shopify/polaris-icons";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { InventoryIcon, ProductIcon } from "@shopify/polaris-icons";
 import {
-  ArrowDownUp,
   Search,
   Columns,
   Image as ImageIcon,
@@ -11,96 +10,54 @@ import {
   ArrowDown,
   Check,
   ChevronsUpDown,
-  XCircle,
-  GripVertical,
-  Eye,
-  EyeOff,
-  MoreHorizontal,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   X,
+  Loader2,
+  Trash2,
+  Edit3,
+  ExternalLink,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useTableLogic } from "@/hooks/admin/useTableLogic";
+import {
+  getAdminProductsAction,
+  bulkDeleteProductsAction,
+  updateProductInventoryAction,
+} from "@/app/actions/products";
 
-const baseTitles = [
-  "Abacus Year 1 Workbook 1",
-  "Abacus Year 1 Workbook 2",
-  "Abacus Year 1 Workbook 3",
-  "Abacus Year 2 Textbook",
-  "Abacus Year 2 Workbook 1",
-  "Abacus Year 2 Workbook 2",
-  "Abacus Year 2 Workbook 3",
-  "Abacus Year 3 Textbook 1",
-  "Abacus Year 3 Textbook 2",
-  "Abacus Year 3 Textbook 3",
-  "ACCOUNTING FOR CAMBRIDGE INTL AS & AL",
-  "BIOLOGY FOR CAMBRIDGE IGCSE REVISION GUIDE - 3 ED",
-  "BUILDING BLOCKS YEAR 1 SPELLING GRAMMAR",
-  "Sinhala Wada Potha 3",
-  "Sinhala Wada Potha 2",
-  "Sinhala Kiyaveem Potha 5",
-  "Sinhala Kiyaveem Potha 4",
-  "RADIANT WAY THIRD STEP",
-  "OXFORD STUDENT LEARNERS DICTIONARY",
-  "Oxford Reading Circle Primer revised edition",
-  "Grade 6 Mathematics Pupil Book",
-  "Grade 7 English Literature Companion",
-  "Grade 8 Science & Technology Guide",
-  "GCE O/L Mathematics Past Papers & Answers",
-  "GCE A/L Physics Theory & Revision Manual",
-  "Harry Potter and the Philosopher's Stone",
-  "Famous Five - Five On A Treasure Island",
-  "Malalasekera English-Sinhala Dictionary",
-  "Targeting Mathematics Primary Year 1",
-  "Cambridge Primary English Learner's Book 3",
-];
-
-const availableCounts = [3, 3, 3, -1, 14, 14, 2, 3, 3, 5, 0, 8, 12, 1, 6];
-
-const initialInventory = Array.from({ length: 120 }, (_, i) => {
-  const baseTitle = baseTitles[i % baseTitles.length];
-  const copyNum = Math.floor(i / baseTitles.length);
-  const title = copyNum > 0 ? `${baseTitle} (Edition ${copyNum + 1})` : baseTitle;
-  const sku = i % 4 === 0 ? `9781408278${475 + i}` : "No SKU";
-  const barcode = i % 3 === 0 ? `978955650${1000 + i}` : "No Barcode";
-  const avail = availableCounts[i % availableCounts.length];
-
-  return {
-    id: i + 1,
-    title,
-    sku,
-    barcode,
-    avail,
-  };
-});
+export interface InventoryItem {
+  id: string;
+  title: string;
+  sku: string;
+  barcode: string;
+  avail: number;
+  status: string;
+  image?: string | null;
+}
 
 export default function InventoryPage() {
   const router = useRouter();
-  const [inventoryList, setInventoryList] = useState(initialInventory);
+  const [inventoryList, setInventoryList] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const {
-    sortedData: inventory,
-    selectedIds,
-    setSelectedIds,
-    sortColumn,
-    sortDirection,
-    isAllSelected,
-    handleSort,
-    toggleSelectAll,
-    handleRowCheckboxClick,
-    isRowSelected,
-  } = useTableLogic(inventoryList, "id");
+  // Selection & Sorting
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [sortColumn, setSortColumn] = useState<"title" | "sku" | "barcode" | "avail">("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  // State Declarations for Toolbar & Popovers
+  // Inline editing state for Available column
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>("");
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  // Popovers & Dialogs
   const [isViewsOpen, setIsViewsOpen] = useState(false);
   const [selectedView, setSelectedView] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
-
   const [isColumnsOpen, setIsColumnsOpen] = useState(false);
-  const [isSortSubMenuOpen, setIsSortSubMenuOpen] = useState(false);
   const [isBulkSelectionMenuOpen, setIsBulkSelectionMenuOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -128,7 +85,6 @@ export default function InventoryPage() {
 
   // Click outside refs
   const viewsRef = useRef<HTMLDivElement>(null);
-  const sortRef = useRef<HTMLDivElement>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
   const bulkSelectionRef = useRef<HTMLDivElement>(null);
 
@@ -137,9 +93,6 @@ export default function InventoryPage() {
       const target = event.target as Node;
       if (viewsRef.current && !viewsRef.current.contains(target)) {
         setIsViewsOpen(false);
-      }
-      if (sortRef.current && !sortRef.current.contains(target)) {
-        setIsSortSubMenuOpen(false);
       }
       if (columnsRef.current && !columnsRef.current.contains(target)) {
         setIsColumnsOpen(false);
@@ -155,48 +108,96 @@ export default function InventoryPage() {
     };
   }, []);
 
-  // Filter Logic for Live Table
-  const filteredInventory = inventory.filter((item) => {
+  // Fetch real products from Supabase database
+  const loadInventory = async () => {
+    try {
+      setIsLoading(true);
+      const prods = await getAdminProductsAction();
+      const mapped: InventoryItem[] = prods.map((p) => ({
+        id: p.id,
+        title: p.name,
+        sku: p.id,
+        barcode: "No barcode",
+        avail: p.inventoryCount ?? 0,
+        status: p.status,
+        image: p.image,
+      }));
+      setInventoryList(mapped);
+    } catch (err) {
+      console.error("Failed to load inventory:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInventory();
+  }, []);
+
+  // Filter & Sort Logic
+  const filteredInventory = useMemo(() => {
+    let result = [...inventoryList];
+
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
-      const matches =
-        item.title.toLowerCase().includes(q) ||
-        item.sku.toLowerCase().includes(q) ||
-        item.barcode.toLowerCase().includes(q) ||
-        item.avail.toString().includes(q);
-      if (!matches) return false;
+      result = result.filter(
+        (item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.sku.toLowerCase().includes(q) ||
+          item.barcode.toLowerCase().includes(q) ||
+          item.avail.toString().includes(q)
+      );
     }
-    return true;
-  });
+
+    result.sort((a, b) => {
+      if (sortColumn === "title") {
+        return sortDirection === "asc"
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title);
+      }
+      if (sortColumn === "sku") {
+        return sortDirection === "asc"
+          ? a.sku.localeCompare(b.sku)
+          : b.sku.localeCompare(a.sku);
+      }
+      if (sortColumn === "barcode") {
+        return sortDirection === "asc"
+          ? a.barcode.localeCompare(b.barcode)
+          : b.barcode.localeCompare(a.barcode);
+      }
+      if (sortColumn === "avail") {
+        return sortDirection === "asc" ? a.avail - b.avail : b.avail - a.avail;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [inventoryList, searchQuery, sortColumn, sortDirection]);
 
   // Pagination Math
   const totalPages = Math.max(1, Math.ceil(filteredInventory.length / ITEMS_PER_PAGE));
-  const paginatedInventory = filteredInventory.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const paginatedInventory = useMemo(() => {
+    return filteredInventory.slice(
+      (currentPage - 1) * ITEMS_PER_PAGE,
+      currentPage * ITEMS_PER_PAGE
+    );
+  }, [filteredInventory, currentPage]);
+
   const startItem = filteredInventory.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
   const endItem = Math.min(currentPage * ITEMS_PER_PAGE, filteredInventory.length);
 
-  // Selection Helper Calculations for Page-by-Page Selection
+  // Selection Logic
   const currentPageIds = paginatedInventory.map((item) => item.id);
-
   const isPageAllSelected =
-    currentPageIds.length > 0 &&
-    currentPageIds.every((id) => selectedIds.has(id));
-
+    currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.has(id));
   const isPageSomeSelected =
     currentPageIds.some((id) => selectedIds.has(id)) && !isPageAllSelected;
 
-  const masterCheckboxRef1 = useRef<HTMLInputElement>(null);
-  const masterCheckboxRef2 = useRef<HTMLInputElement>(null);
+  const masterCheckboxRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (masterCheckboxRef1.current) {
-      masterCheckboxRef1.current.indeterminate = isPageSomeSelected;
-    }
-    if (masterCheckboxRef2.current) {
-      masterCheckboxRef2.current.indeterminate = isPageSomeSelected;
+    if (masterCheckboxRef.current) {
+      masterCheckboxRef.current.indeterminate = isPageSomeSelected;
     }
   }, [isPageSomeSelected, selectedIds]);
 
@@ -212,25 +213,24 @@ export default function InventoryPage() {
     }
   };
 
-  const selectAllOnCurrentPage = () => {
+  const handleRowCheckbox = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     const next = new Set(selectedIds);
-    currentPageIds.forEach((id) => next.add(id));
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     setSelectedIds(next);
   };
 
-  const selectAllInStore = () => {
-    const next = new Set(inventory.map((item) => item.id));
-    setSelectedIds(next);
-  };
-
-  const unselectAll = () => {
-    setSelectedIds(new Set());
-  };
-
-  const handleBulkDelete = () => {
-    setInventoryList((prev) => prev.filter((item) => !selectedIds.has(item.id)));
-    setSelectedIds(new Set());
-    setDeleteConfirmOpen(false);
+  const handleSort = (colKey: "title" | "sku" | "barcode" | "avail") => {
+    if (sortColumn === colKey) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(colKey);
+      setSortDirection("asc");
+    }
   };
 
   const renderSortIndicator = (colKey: string) => {
@@ -242,87 +242,113 @@ export default function InventoryPage() {
     );
   };
 
+  // Inline Available Quantity Save
+  const handleStartEdit = (id: string, currentVal: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+    setEditValue(String(currentVal));
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    const parsed = parseInt(editValue.trim(), 10);
+    if (isNaN(parsed)) {
+      setEditingId(null);
+      return;
+    }
+
+    try {
+      setSavingId(id);
+      setInventoryList((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, avail: parsed } : item))
+      );
+      setEditingId(null);
+
+      const res = await updateProductInventoryAction(id, parsed);
+      if (res.success) {
+        setSavedId(id);
+        setTimeout(() => setSavedId(null), 1800);
+      }
+    } catch (err) {
+      console.error("Failed to update inventory:", err);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  // Bulk Delete
+  const handleBulkDelete = async () => {
+    try {
+      const idsToDelete = Array.from(selectedIds);
+      const res = await bulkDeleteProductsAction(idsToDelete);
+      if (res.success) {
+        setInventoryList((prev) => prev.filter((item) => !selectedIds.has(item.id)));
+        setSelectedIds(new Set());
+        setDeleteConfirmOpen(false);
+      }
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+    }
+  };
+
   return (
-    <div className="w-full relative pb-10 select-none">
+    <div className="w-full relative pb-10 select-none font-sans">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-3">
-        <h1 className="text-[20px] font-bold text-[#1a1a1a] flex items-center gap-2">
-          <InventoryIcon className="w-5 h-5 fill-current text-[#1a1a1a]" />
-          <span>Inventory</span>
-        </h1>
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-[20px] font-bold text-[#1a1a1a] flex items-center gap-2">
+            <InventoryIcon className="w-5 h-5 fill-current text-[#1a1a1a]" />
+            <span>Inventory</span>
+          </h1>
+          <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+            {inventoryList.length} {inventoryList.length === 1 ? "product" : "products"}
+          </span>
+        </div>
+
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="px-3 py-1 text-[13px] font-medium text-[#303030] bg-[#e4e5e7] hover:bg-[#dcdedf] rounded-md transition shadow-2xs cursor-pointer"
+            onClick={() => router.push("/admin/products/new")}
+            className="px-3.5 py-1.5 text-[13px] font-semibold text-white bg-[#1a1a1a] hover:bg-[#303030] rounded-xl transition shadow-2xs cursor-pointer"
           >
-            Export
-          </button>
-          <button
-            type="button"
-            className="px-3 py-1 text-[13px] font-medium text-[#303030] bg-[#e4e5e7] hover:bg-[#dcdedf] rounded-md transition shadow-2xs cursor-pointer"
-          >
-            Import
+            Add product
           </button>
         </div>
       </div>
 
-      {/* Main Table Area Card Container with Rounded Top Corners */}
-      <div className="bg-white border border-[#e1e3e5] rounded-xl shadow-2xs">
+      {/* Main Table Area Card Container */}
+      <div className="bg-white border border-[#e1e3e5] rounded-2xl shadow-2xs overflow-hidden">
         {/* Table Toolbar Header Row */}
-        <div className="p-2 border-b border-[#e1e3e5] bg-white flex items-center justify-between rounded-t-xl">
+        <div className="p-2 border-b border-[#e1e3e5] bg-white flex items-center justify-between">
           {/* Unified Search and View Filter Bar */}
-          <div className="relative flex-1 w-full flex items-center bg-white border border-[#c9cccf] rounded-lg px-2 py-1 focus-within:border-[#005bd3] focus-within:ring-2 focus-within:ring-[#005bd3]/20 transition shadow-2xs">
-            {/* Integrated View Selector Pill on Far Left (Matching Reference Image 0) */}
+          <div className="relative flex-1 w-full flex items-center bg-white border border-[#c9cccf] rounded-xl px-2.5 py-1 focus-within:border-[#005bd3] focus-within:ring-2 focus-within:ring-[#005bd3]/20 transition shadow-2xs">
+            {/* View Selector */}
             <div ref={viewsRef} className="relative z-50 shrink-0 mr-2">
               <button
                 type="button"
                 onClick={() => setIsViewsOpen(!isViewsOpen)}
-                className="bg-[#f1f2f4] hover:bg-[#e4e5e7] text-[#1a1a1a] text-[12px] font-semibold px-2 py-0.5 rounded flex items-center gap-1.5 border border-[#c9cccf] transition cursor-pointer"
+                className="bg-[#f1f2f4] hover:bg-[#e4e5e7] text-[#1a1a1a] text-[12px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-[#c9cccf] transition cursor-pointer"
               >
                 <span>{selectedView}</span>
                 <ChevronsUpDown className="w-3 h-3 text-[#616161]" />
               </button>
 
-              {/* Floating Views Dropdown Menu */}
               {isViewsOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out">
-                  {["All"].map((view) => {
-                    const isSelected = selectedView === view;
-                    return (
-                      <div
-                        key={view}
-                        onClick={() => {
-                          setSelectedView(view);
-                          setIsViewsOpen(false);
-                        }}
-                        className={cn(
-                          "w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] rounded-md transition text-left cursor-pointer select-none",
-                          isSelected
-                            ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold"
-                            : "text-[#303030] hover:bg-[#f6f6f7]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          {isSelected ? (
-                            <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />
-                          ) : (
-                            <div className="w-3.5 h-3.5" />
-                          )}
-                          <span>{view}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                          className="p-1 text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] rounded transition"
-                          title="More actions"
-                        >
-                          <MoreHorizontal className="w-3.5 h-3.5" />
-                        </button>
+                <div className="absolute top-full left-0 mt-1.5 w-48 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-0.5 animate-in fade-in-0 zoom-in-95 duration-100">
+                  {["All"].map((view) => (
+                    <div
+                      key={view}
+                      onClick={() => {
+                        setSelectedView(view);
+                        setIsViewsOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 text-[13px] rounded-lg transition text-left cursor-pointer bg-[#f1f2f4] text-[#1a1a1a] font-semibold"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />
+                        <span>{view}</span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -334,7 +360,7 @@ export default function InventoryPage() {
               )}
               <input
                 type="text"
-                placeholder="Search and filter"
+                placeholder="Search products by title, SKU, or quantity"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 min-w-[60px] text-[13px] bg-transparent outline-none text-[#1a1a1a]"
@@ -348,141 +374,47 @@ export default function InventoryPage() {
                 className="p-1 text-[#616161] hover:text-[#1a1a1a] shrink-0 ml-1 rounded-full hover:bg-[#f1f2f4] transition cursor-pointer"
                 title="Clear search"
               >
-                <XCircle className="w-4 h-4 text-[#8a8a8a] hover:text-[#1a1a1a]" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Right Action Controls: Sort, Columns, Save */}
-          <div className="flex items-center gap-1.5 ml-2.5 shrink-0">
-            {/* Sort Popover Button (Matching Image 2) */}
-            <div ref={sortRef} className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSortSubMenuOpen(!isSortSubMenuOpen);
-                  setIsColumnsOpen(false);
-                }}
-                className="p-1.5 text-[#616161] hover:text-[#1a1a1a] hover:bg-[#f1f2f4] rounded-md border border-transparent transition flex items-center gap-1 cursor-pointer"
-                title="Sort by"
-              >
-                <ArrowDownUp className="w-4 h-4" />
-              </button>
-
-              {/* Floating Sort Menu Popover (Matching Image 2) */}
-              {isSortSubMenuOpen && (
-                <div className="absolute top-full right-0 mt-1.5 w-[220px] bg-white border border-[#e1e3e5] rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-0.5 text-[13px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out max-h-[380px] overflow-y-auto">
-                  {[
-                    { label: "Product", key: "title" },
-                    { label: "SKU", key: "sku" },
-                    { label: "Barcode", key: "barcode" },
-                    { label: "Available", key: "avail" },
-                  ].map((col) => {
-                    const isSelected = (sortColumn || "title") === col.key;
-                    return (
-                      <button
-                        key={col.key}
-                        type="button"
-                        onClick={() => {
-                          handleSort(col.key);
-                          setIsSortSubMenuOpen(false);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition select-none cursor-pointer",
-                          isSelected ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold" : "text-[#303030] hover:bg-[#f6f6f7]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="w-3.5 flex items-center justify-center">
-                            {isSelected && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                          </span>
-                          <span>{col.label}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-
-                  <hr className="my-1 border-[#e1e3e5]" />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (sortDirection !== "asc") handleSort(sortColumn || "title");
-                      setIsSortSubMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition select-none cursor-pointer",
-                      sortDirection === "asc" ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold" : "text-[#303030] hover:bg-[#f6f6f7]"
-                    )}
-                  >
-                    <span className="w-3.5 flex items-center justify-center">
-                      {sortDirection === "asc" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                    </span>
-                    <span>Ascending</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (sortDirection !== "desc") handleSort(sortColumn || "title");
-                      setIsSortSubMenuOpen(false);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition select-none cursor-pointer",
-                      sortDirection === "desc" ? "bg-[#f1f2f4] text-[#1a1a1a] font-semibold" : "text-[#303030] hover:bg-[#f6f6f7]"
-                    )}
-                  >
-                    <span className="w-3.5 flex items-center justify-center">
-                      {sortDirection === "desc" && <Check className="w-3.5 h-3.5 text-[#1a1a1a]" />}
-                    </span>
-                    <span>Descending</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Columns Customization Popover Button (Matching Image 1) */}
+          {/* Right Toolbar Actions */}
+          <div className="flex items-center gap-1 ml-2">
+            {/* Columns Customizer */}
             <div ref={columnsRef} className="relative">
               <button
                 type="button"
-                onClick={() => {
-                  setIsColumnsOpen(!isColumnsOpen);
-                  setIsSortSubMenuOpen(false);
-                }}
-                className="p-1.5 text-[#616161] hover:text-[#1a1a1a] hover:bg-[#f1f2f4] rounded-md border border-transparent transition flex items-center gap-1 cursor-pointer"
+                onClick={() => setIsColumnsOpen(!isColumnsOpen)}
+                className={cn(
+                  "p-1.5 rounded-lg border transition cursor-pointer text-[#616161] hover:text-[#1a1a1a] flex items-center justify-center",
+                  isColumnsOpen
+                    ? "bg-[#f1f2f4] border-[#c9cccf]"
+                    : "border-transparent hover:bg-[#f1f2f4]"
+                )}
                 title="Edit columns"
               >
                 <Columns className="w-4 h-4" />
               </button>
 
-              {/* Floating Columns Popover (Matching Image 1) */}
               {isColumnsOpen && (
-                <div className="absolute top-full right-0 mt-1.5 w-[260px] bg-white border border-[#e1e3e5] rounded-2xl shadow-2xl p-2.5 z-50 flex flex-col gap-1 text-[13px] animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-150 ease-out">
-                  <div className="text-[12px] font-semibold text-[#616161] px-2 py-1">Columns</div>
+                <div className="absolute top-full right-0 mt-1.5 w-48 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-2 z-50 animate-in fade-in-0 zoom-in-95 duration-100 flex flex-col gap-1 text-[13px]">
+                  <div className="text-[11px] font-semibold text-[#616161] uppercase px-2 py-1">
+                    Toggle columns
+                  </div>
                   {columns.map((col) => (
-                    <div
+                    <label
                       key={col.id}
-                      onClick={() => toggleColumnVisibility(col.id)}
-                      className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-[#f6f6f7] transition cursor-pointer select-none"
+                      className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-[#f6f6f7] cursor-pointer text-[#303030]"
                     >
-                      <div className="flex items-center gap-2 text-[#303030]">
-                        <GripVertical className="w-4 h-4 text-[#8a8a8a] cursor-grab" />
-                        <span className="font-medium text-[#1a1a1a]">{col.label}</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleColumnVisibility(col.id);
-                        }}
-                        className="text-[#616161] hover:text-[#1a1a1a] p-1 transition"
-                      >
-                        {col.visible ? (
-                          <Eye className="w-4 h-4 text-[#1a1a1a]" />
-                        ) : (
-                          <EyeOff className="w-4 h-4 text-[#8a8a8a]" />
-                        )}
-                      </button>
-                    </div>
+                      <input
+                        type="checkbox"
+                        checked={col.visible}
+                        onChange={() => toggleColumnVisibility(col.id)}
+                        className="rounded border-[#c9cccf] cursor-pointer"
+                      />
+                      <span>{col.label}</span>
+                    </label>
                   ))}
                 </div>
               )}
@@ -490,27 +422,27 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Table Container */}
+        {/* Table View Container */}
         <div className="overflow-x-auto">
-          <table className="polaris-table w-full">
+          <table className="w-full text-left whitespace-nowrap border-collapse">
             <colgroup>
-              <col style={{ width: "36px" }} />
-              <col style={{ width: "240px" }} />
-              {isColVisible("sku") && <col style={{ width: "35%" }} />}
+              <col style={{ width: "42px" }} />
+              <col />
+              {isColVisible("sku") && <col />}
               {isColVisible("barcode") && <col />}
-              {isColVisible("avail") && <col style={{ width: "160px" }} />}
+              {isColVisible("avail") && <col style={{ width: "180px" }} />}
             </colgroup>
             <thead>
               {selectedIds.size > 0 ? (
-                /* Bulk Action Bar matching product & collection pages */
+                /* Bulk Action Bar */
                 <tr className="bg-[#f1f2f4] border-b border-[#e1e3e5] h-[48px] text-[13px] text-[#1a1a1a] font-medium">
-                  <th className="pl-3 pr-1 align-middle text-left">
+                  <th className="pl-3.5 pr-1 align-middle text-left">
                     <input
-                      ref={masterCheckboxRef1}
+                      ref={masterCheckboxRef}
                       type="checkbox"
                       checked={isPageAllSelected}
                       onChange={handleMasterCheckboxToggle}
-                      className="rounded-[4px] border-[#c9cccf] cursor-pointer accent-[#1a1a1a] w-4 h-4"
+                      className="rounded border-[#c9cccf] cursor-pointer accent-[#1a1a1a] w-4 h-4"
                     />
                   </th>
                   <th colSpan={99} className="pl-1 pr-3 align-middle py-1.5">
@@ -527,22 +459,10 @@ export default function InventoryPage() {
 
                         {isBulkSelectionMenuOpen && (
                           <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 animate-in fade-in-0 zoom-in-95 duration-100 flex flex-col gap-0.5">
-                            {!isPageAllSelected && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  selectAllOnCurrentPage();
-                                  setIsBulkSelectionMenuOpen(false);
-                                }}
-                                className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium text-[13px]"
-                              >
-                                Select all {paginatedInventory.length} on page
-                              </button>
-                            )}
                             <button
                               type="button"
                               onClick={() => {
-                                selectAllInStore();
+                                setSelectedIds(new Set(inventoryList.map((i) => i.id)));
                                 setIsBulkSelectionMenuOpen(false);
                               }}
                               className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium text-[13px]"
@@ -552,7 +472,7 @@ export default function InventoryPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                unselectAll();
+                                setSelectedIds(new Set());
                                 setIsBulkSelectionMenuOpen(false);
                               }}
                               className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium text-[13px]"
@@ -575,37 +495,39 @@ export default function InventoryPage() {
                         Bulk edit
                       </button>
 
+                      {/* Delete Inventory / Products */}
                       <button
                         type="button"
                         onClick={() => setDeleteConfirmOpen(true)}
-                        className="bg-white hover:bg-[#fff5f5] border border-[#c9cccf] text-red-600 px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer"
+                        className="bg-white hover:bg-[#fff5f5] border border-[#c9cccf] text-red-600 px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer flex items-center gap-1.5"
                       >
-                        Delete inventory items
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete products</span>
                       </button>
                     </div>
                   </th>
                 </tr>
               ) : (
-                /* Regular Column Headers Row matching product & collection page measurements */
-                <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#f7f7f7] select-none h-[44px]">
-                  <th className="pl-3 pr-1 py-1.5 w-9 align-middle text-left">
+                /* Regular Column Headers */
+                <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#fafafa] select-none h-[44px]">
+                  <th className="pl-3.5 pr-1 py-1.5 w-9 align-middle text-left">
                     <input
-                      ref={masterCheckboxRef2}
+                      ref={masterCheckboxRef}
                       type="checkbox"
                       checked={isPageAllSelected}
                       onChange={handleMasterCheckboxToggle}
-                      className="rounded-[4px] border-[#c9cccf] cursor-pointer"
+                      className="rounded border-[#c9cccf] cursor-pointer"
                     />
                   </th>
                   <th
-                    className="pl-1 pr-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-left"
+                    className="pl-1 pr-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition align-middle text-left"
                     onClick={() => handleSort("title")}
                   >
                     Product {renderSortIndicator("title")}
                   </th>
                   {isColVisible("sku") && (
                     <th
-                      className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-left"
+                      className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition align-middle text-left"
                       onClick={() => handleSort("sku")}
                     >
                       SKU {renderSortIndicator("sku")}
@@ -613,7 +535,7 @@ export default function InventoryPage() {
                   )}
                   {isColVisible("barcode") && (
                     <th
-                      className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-left"
+                      className="px-3 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition align-middle text-left"
                       onClick={() => handleSort("barcode")}
                     >
                       Barcode {renderSortIndicator("barcode")}
@@ -621,7 +543,7 @@ export default function InventoryPage() {
                   )}
                   {isColVisible("avail") && (
                     <th
-                      className="px-4 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition h-[44px] align-middle text-right"
+                      className="px-4 py-1.5 cursor-pointer hover:text-[#1a1a1a] transition align-middle text-right"
                       onClick={() => handleSort("avail")}
                     >
                       Available {renderSortIndicator("avail")}
@@ -630,9 +552,18 @@ export default function InventoryPage() {
                 </tr>
               )}
             </thead>
-            <tbody>
-              {paginatedInventory.length === 0 ? (
-                <tr className="bg-white">
+            <tbody className="divide-y divide-[#f1f1f1]">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={100} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <Loader2 className="w-8 h-8 text-[#616161] animate-spin" />
+                      <p className="text-[13px] text-[#616161] font-medium">Loading inventory from database...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedInventory.length === 0 ? (
+                <tr>
                   <td colSpan={100} className="py-16 text-center">
                     <div className="flex flex-col items-center justify-center max-w-md mx-auto py-6">
                       <div className="w-16 h-16 rounded-full bg-[#f1f2f4] flex items-center justify-center mb-4">
@@ -642,65 +573,146 @@ export default function InventoryPage() {
                         No inventory items found
                       </h3>
                       <p className="text-[13px] text-[#616161] mb-5">
-                        Try changing the search terms
+                        {searchQuery ? "Try changing your search query." : "No products available in store."}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery("")}
-                        className="bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold px-4 py-2 rounded-lg shadow-2xs transition cursor-pointer"
-                      >
-                        Clear search
-                      </button>
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery("")}
+                          className="bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold px-4 py-2 rounded-xl shadow-2xs transition cursor-pointer"
+                        >
+                          Clear search
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               ) : (
-                paginatedInventory.map((item, idx) => {
-                  const selected = isRowSelected(item.id);
+                paginatedInventory.map((item) => {
+                  const isSelected = selectedIds.has(item.id);
+                  const isEditingThis = editingId === item.id;
+                  const isSavingThis = savingId === item.id;
+                  const isSavedThis = savedId === item.id;
+
                   return (
                     <tr
                       key={item.id}
-                      className={`border-b border-[#f1f1f1] h-[38px] transition cursor-pointer ${
-                        selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
-                      }`}
+                      onClick={() => router.push(`/admin/products/${item.id}`)}
+                      className={cn(
+                        "h-[48px] transition cursor-pointer group",
+                        isSelected ? "bg-[#f4f6f8]" : "hover:bg-[#fafafa]"
+                      )}
                     >
-                      <td className="pl-3 pr-1 py-1 align-middle text-left">
+                      {/* Checkbox cell */}
+                      <td className="pl-3.5 pr-1 py-1.5 align-middle text-left">
                         <input
                           type="checkbox"
-                          checked={selected}
+                          checked={isSelected}
                           onChange={() => {}}
-                          onClick={(e) => handleRowCheckboxClick(e, idx, item.id)}
-                          className="rounded-[4px] border-[#c9cccf] cursor-pointer"
+                          onClick={(e) => handleRowCheckbox(item.id, e)}
+                          className="rounded border-[#c9cccf] cursor-pointer"
                         />
                       </td>
-                      <td className="pl-1 pr-3 py-1 align-middle font-semibold text-[#1a1a1a]">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0">
-                            <ImageIcon className="w-4 h-4 text-gray-300" />
+
+                      {/* Product Name & Image */}
+                      <td className="pl-1 pr-3 py-1.5 align-middle font-semibold text-[#1a1a1a]">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg border border-[#e1e3e5] bg-[#f9fafb] flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+                            {item.image ? (
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ProductIcon className="w-4 h-4 fill-current text-[#8c8c8c]" />
+                            )}
                           </div>
-                          <span className="truncate text-[#1a1a1a] no-underline" title={item.title}>
-                            {item.title}
-                          </span>
+                          <div className="min-w-0">
+                            <span
+                              className="truncate text-[13px] font-semibold text-[#1a1a1a] group-hover:text-[#005bd3] transition"
+                              title={item.title}
+                            >
+                              {item.title}
+                            </span>
+                            {item.status !== "Active" && (
+                              <span className="ml-2 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                {item.status}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
+
+                      {/* SKU */}
                       {isColVisible("sku") && (
-                        <td className="px-3 py-1.5 text-[#616161] align-middle text-left">
+                        <td className="px-3 py-1.5 text-[12.5px] text-[#616161] font-mono align-middle text-left">
                           {item.sku}
                         </td>
                       )}
+
+                      {/* Barcode */}
                       {isColVisible("barcode") && (
-                        <td className="px-3 py-1.5 text-[#616161] align-middle text-left">
+                        <td className="px-3 py-1.5 text-[12.5px] text-[#8c8c8c] align-middle text-left">
                           {item.barcode}
                         </td>
                       )}
+
+                      {/* Available (Interactive Inline Editing) */}
                       {isColVisible("avail") && (
                         <td
-                          className={cn(
-                            "px-4 py-1.5 font-medium align-middle text-right",
-                            item.avail < 0 ? "text-red-600" : "text-[#1a1a1a]"
-                          )}
+                          className="px-4 py-1.5 align-middle text-right"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {item.avail}
+                          {isEditingThis ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <input
+                                type="number"
+                                autoFocus
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveEdit(item.id);
+                                  if (e.key === "Escape") setEditingId(null);
+                                }}
+                                onBlur={() => handleSaveEdit(item.id)}
+                                className="w-20 text-right text-[13px] font-mono font-semibold bg-white border border-[#005bd3] ring-2 ring-[#005bd3]/20 rounded-lg px-2 py-1 outline-none text-[#1a1a1a]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEdit(item.id)}
+                                className="p-1 bg-[#1a1a1a] hover:bg-[#303030] text-white rounded-md transition"
+                                title="Save quantity"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div
+                              onClick={(e) => handleStartEdit(item.id, item.avail, e)}
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-[#e4e5e7] transition cursor-pointer group/qty"
+                              title="Click to edit available inventory"
+                            >
+                              {isSavingThis ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#616161]" />
+                              ) : isSavedThis ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              ) : null}
+                              <span
+                                className={cn(
+                                  "font-mono font-semibold text-[13px]",
+                                  item.avail <= 0
+                                    ? "text-red-600"
+                                    : item.avail < 10
+                                    ? "text-amber-600"
+                                    : "text-[#1a1a1a]"
+                                )}
+                              >
+                                {item.avail}
+                              </span>
+                              <Edit3 className="w-3 h-3 text-[#8c8c8c] opacity-0 group-hover/qty:opacity-100 transition" />
+                            </div>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -711,15 +723,19 @@ export default function InventoryPage() {
           </table>
         </div>
 
-        {/* Pagination Footer matching Screenshot 0 */}
-        <div className="px-4 py-3 flex items-center justify-center gap-4 border-t border-[#e1e3e5] text-sm text-[#1a1a1a] select-none">
-          <div className="flex gap-1">
+        {/* Pagination Footer */}
+        <div className="px-4 py-3 flex items-center justify-between border-t border-[#e1e3e5] text-sm text-[#1a1a1a] select-none bg-white">
+          <span className="text-[13px] text-[#616161]">
+            Showing {startItem}-{endItem} of {filteredInventory.length} products
+          </span>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={currentPage <= 1}
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               className={cn(
-                "p-1 border border-[#c9cccf] rounded transition",
+                "p-1.5 border border-[#c9cccf] rounded-lg transition",
                 currentPage <= 1
                   ? "text-[#8a8a8a] bg-[#f6f6f7] cursor-not-allowed"
                   : "text-[#1a1a1a] bg-white hover:bg-[#f1f2f4] cursor-pointer"
@@ -728,12 +744,15 @@ export default function InventoryPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
+            <span className="text-[12px] font-mono text-[#616161]">
+              Page {currentPage} of {totalPages}
+            </span>
             <button
               type="button"
               disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
               className={cn(
-                "p-1 border border-[#c9cccf] rounded transition",
+                "p-1.5 border border-[#c9cccf] rounded-lg transition",
                 currentPage >= totalPages
                   ? "text-[#8a8a8a] bg-[#f6f6f7] cursor-not-allowed"
                   : "text-[#1a1a1a] bg-white hover:bg-[#f1f2f4] cursor-pointer"
@@ -743,46 +762,38 @@ export default function InventoryPage() {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <span className="text-[13px] text-[#616161] font-medium">
-            {startItem}-{endItem}
-          </span>
         </div>
       </div>
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4 animate-in fade-in duration-200 select-none">
-          <div className="relative w-full max-w-[480px] bg-white rounded-xl shadow-2xl border border-[#e1e3e5] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e1e3e5]">
-              <h2 className="text-[16px] font-semibold text-[#1a1a1a]">
-                Delete {selectedIds.size} {selectedIds.size === 1 ? "item" : "items"}?
-              </h2>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e1e3e5] overflow-hidden">
+            <div className="p-6 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-[16px] font-bold text-[#1a1a1a]">
+                Delete {selectedIds.size} {selectedIds.size === 1 ? "product" : "products"}?
+              </h3>
+              <p className="text-[13px] text-[#616161]">
+                This will delete the selected products from your inventory and product catalog permanently. This action cannot be undone.
+              </p>
+            </div>
+            <div className="px-6 py-3.5 bg-[#fafafa] border-t border-[#e1e3e5] flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmOpen(false)}
-                className="text-[#616161] hover:text-[#1a1a1a] p-1 rounded-md hover:bg-[#f1f2f4] transition"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 text-[13.5px] text-[#303030] leading-normal">
-              This action cannot be undone. This will permanently delete the selected inventory items.
-            </div>
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-[#e1e3e5] bg-white">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmOpen(false)}
-                className="px-3.5 py-1.5 text-[13px] font-medium text-[#303030] bg-white hover:bg-[#f6f6f7] border border-[#c9cccf] rounded-lg shadow-2xs transition cursor-pointer"
+                className="px-4 py-1.5 text-[13px] font-medium text-[#303030] bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleBulkDelete}
-                className="px-3.5 py-1.5 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-2xs transition cursor-pointer"
+                className="px-4 py-1.5 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-2xs cursor-pointer"
               >
-                Delete items
+                Delete
               </button>
             </div>
           </div>
@@ -791,4 +802,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-

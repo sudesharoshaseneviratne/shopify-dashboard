@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -15,151 +15,298 @@ import {
   Users,
   Eye,
   Tag,
-  Copy,
   ExternalLink,
-  MoreHorizontal
+  Trash2,
+  AlertTriangle,
+  ArrowLeft,
+  Loader2,
+  Check,
+  Search
 } from "lucide-react";
-import { CollectionIcon } from "@shopify/polaris-icons";
+import { CollectionIcon, ProductIcon } from "@shopify/polaris-icons";
 import { cn } from "@/lib/utils";
-
-// Mock Collections Database
-const mockCollectionsData: Record<string, { id: string; title: string; description: string; handle: string; products: Array<{ id: string; title: string; badge: string; bgGradient: string }> }> = {
-  "1": {
-    id: "1",
-    title: "Sinhala Books",
-    description: "",
-    handle: "sinhala-books-sinhala-readers",
-    products: [
-      { id: "p1", title: "Sinhala Kiyaveem Potha 5", badge: "5", bgGradient: "from-amber-200 to-green-300" },
-      { id: "p2", title: "Government Sinhala Wada Potha 3 -...", badge: "3", bgGradient: "from-blue-200 to-indigo-300" },
-      { id: "p3", title: "Government Sinhala Wada Potha 2 -...", badge: "2", bgGradient: "from-purple-200 to-pink-300" },
-      { id: "p4", title: "Government Sinhala Kiyaveem Potha 4 -...", badge: "4", bgGradient: "from-emerald-200 to-teal-300" },
-      { id: "p5", title: "Government Sinhala Kiyaveem Potha 3 -...", badge: "3", bgGradient: "from-rose-200 to-orange-300" },
-      { id: "p6", title: "Government Sinhala Kiyaveem Potha 2 -...", badge: "2", bgGradient: "from-cyan-200 to-blue-300" },
-      { id: "p7", title: "MUTHU AKURU GRADE 4 - BOOK 3", badge: "3", bgGradient: "from-lime-200 to-emerald-300" },
-      { id: "p8", title: "MUTHU AKURU GRADE 4 - BOOK 2", badge: "2", bgGradient: "from-violet-200 to-purple-300" },
-    ]
-  },
-  "2": {
-    id: "2",
-    title: "Generic Publishers",
-    description: "",
-    handle: "generic-publishers",
-    products: [
-      { id: "p1", title: "Abacus Year 1 Workbook 1", badge: "1", bgGradient: "from-blue-200 to-cyan-300" },
-      { id: "p2", title: "Abacus Year 1 Workbook 2", badge: "2", bgGradient: "from-teal-200 to-emerald-300" },
-      { id: "p3", title: "Abacus Year 2 Textbook", badge: "2", bgGradient: "from-indigo-200 to-blue-300" },
-    ]
-  },
-};
+import { 
+  getAdminCollectionByIdAction, 
+  updateCollectionAction, 
+  deleteCollectionAction 
+} from "@/app/actions/collections";
+import { getAdminProductsAction } from "@/app/actions/products";
+import { uploadProductImageAction } from "@/app/actions/upload";
 
 export default function CollectionEditPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const collectionId = resolvedParams.id;
 
-  // Find collection or fallback to default Sinhala Books
-  const initialCollection = mockCollectionsData[resolvedParams.id] || mockCollectionsData["1"];
+  // Loading & Error States
+  const [isLoading, setIsLoading] = useState(true);
+  const [collectionNotFound, setCollectionNotFound] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const [title, setTitle] = useState(initialCollection.title);
-  const [description, setDescription] = useState(initialCollection.description);
-  const [handle, setHandle] = useState(initialCollection.handle);
-  const [collectionProducts, setCollectionProducts] = useState(initialCollection.products);
-  const [sortOption, setSortOption] = useState("Most relevant");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  // Collection Form States
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [slug, setSlug] = useState("");
+  const [collectionImage, setCollectionImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [assignedProducts, setAssignedProducts] = useState<Array<{ id: string; name: string; price: string; status: string; image?: string | null }>>([]);
   const [themeTemplate, setThemeTemplate] = useState("Default collection");
-  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
-  const handleRemoveProduct = (productId: string) => {
-    setCollectionProducts((prev) => prev.filter((p) => p.id !== productId));
+  // Add Products Modal States
+  const [isAddProductsModalOpen, setIsAddProductsModalOpen] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState<Array<{ id: string; name: string; price: string; status: string }>>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+
+  // Load collection and all products
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const [colData, allProds] = await Promise.all([
+          getAdminCollectionByIdAction(collectionId),
+          getAdminProductsAction(),
+        ]);
+
+        if (!colData) {
+          setCollectionNotFound(true);
+          return;
+        }
+
+        setTitle(colData.title);
+        setDescription(colData.description || "");
+        setSlug(colData.slug);
+        setCollectionImage(colData.image);
+        setAssignedProducts(colData.assignedProducts || []);
+
+        setAvailableProducts(
+          allProds.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: `$${p.rawPrice.toFixed(2)}`,
+            status: p.status,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to load collection:", err);
+        setCollectionNotFound(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, [collectionId]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingImage(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadProductImageAction(formData);
+      if (res.success && res.url) {
+        setCollectionImage(res.url);
+      }
+    } catch (err) {
+      console.error("Image upload failed:", err);
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
-  const handleSave = () => {
-    router.push("/admin/products/collections");
+  const handleRemoveProduct = (prodId: string) => {
+    setAssignedProducts((prev) => prev.filter((p) => p.id !== prodId));
   };
+
+  const handleToggleProduct = (prod: { id: string; name: string; price: string; status: string }) => {
+    setAssignedProducts((prev) => {
+      const exists = prev.some((p) => p.id === prod.id);
+      if (exists) {
+        return prev.filter((p) => p.id !== prod.id);
+      } else {
+        return [...prev, { ...prod, image: null }];
+      }
+    });
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setSaveError("Please enter a collection title.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      setSaveSuccess(false);
+
+      const res = await updateCollectionAction(collectionId, {
+        title: title.trim(),
+        slug: slug.trim() || undefined,
+        description: description.trim(),
+        image: collectionImage || undefined,
+        productIds: assignedProducts.map((p) => p.id),
+      });
+
+      if (res.success) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        setSaveError(res.error || "Failed to update collection");
+      }
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      const res = await deleteCollectionAction(collectionId);
+      if (res.success) {
+        router.push("/admin/products/collections");
+      } else {
+        setSaveError(res.error || "Failed to delete collection");
+        setIsDeleteModalOpen(false);
+      }
+    } catch (err) {
+      setSaveError(String(err));
+      setIsDeleteModalOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <Loader2 className="w-8 h-8 text-[#616161] animate-spin" />
+        <p className="text-[13px] text-[#616161] font-medium">Loading collection details...</p>
+      </div>
+    );
+  }
+
+  if (collectionNotFound) {
+    return (
+      <div className="max-w-[600px] mx-auto py-16 text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-[#f1f2f4] flex items-center justify-center mx-auto text-[#616161]">
+          <CollectionIcon className="w-8 h-8 fill-current text-[#616161]" />
+        </div>
+        <h2 className="text-[20px] font-bold text-[#1a1a1a]">Collection not found</h2>
+        <p className="text-[13px] text-[#616161]">
+          The collection you are looking for does not exist or has been removed.
+        </p>
+        <Link
+          href="/admin/products/collections"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold rounded-xl transition shadow-2xs"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Collections</span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 font-sans pb-24 max-w-[1020px] mx-auto select-none text-[#1a1a1a]">
-      {/* Top Navigation Header matching Screenshots 1 & 2 */}
-      <div className="flex items-center justify-between py-1 flex-wrap gap-2">
-        <div className="flex items-center gap-2 text-[18px] font-bold text-[#1a1a1a]">
+    <div className="space-y-4 font-sans pb-28 max-w-[1020px] mx-auto select-none text-[#1a1a1a]">
+      {/* Top Header Breadcrumb & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
+        <div className="flex items-center gap-2.5 min-w-0">
           <Link
             href="/admin/products/collections"
-            className="p-1 rounded-md text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition flex items-center justify-center cursor-pointer"
+            className="p-1.5 rounded-md text-[#616161] hover:text-[#1a1a1a] hover:bg-[#e4e5e7] transition flex items-center justify-center cursor-pointer shrink-0"
             title="Back to Collections"
           >
-            <CollectionIcon className="w-5 h-5 fill-current text-[#616161]" />
+            <ArrowLeft className="w-5 h-5 text-[#616161]" />
           </Link>
-          <span className="text-[#616161] text-[15px] font-normal">›</span>
-          <h1 className="text-[18px] font-bold text-[#1a1a1a]">{title}</h1>
+          <h1 className="text-[18px] sm:text-[20px] font-bold text-[#1a1a1a] truncate" title={title}>
+            {title || "Untitled Collection"}
+          </h1>
         </div>
 
-        {/* Top Right Action Buttons matching Screenshot 1 */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
+          {/* View in store link button */}
+          <Link
+            href={`/store/products?category=${encodeURIComponent(title)}`}
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium text-[#303030] bg-white hover:bg-[#f6f6f7] border border-[#c9cccf] rounded-xl transition shadow-2xs cursor-pointer"
+            title="Preview category on storefront"
+          >
+            <ExternalLink className="w-3.5 h-3.5 text-[#616161]" />
+            <span>View in store</span>
+          </Link>
+
+          {/* Delete action button */}
           <button
             type="button"
-            className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer"
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="p-2 text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 rounded-xl transition cursor-pointer"
+            title="Delete collection"
           >
-            Duplicate
+            <Trash2 className="w-4 h-4" />
           </button>
+
+          {/* Save button */}
           <button
             type="button"
-            className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer flex items-center gap-1"
+            disabled={isSaving}
+            onClick={handleSave}
+            className="px-4 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] disabled:opacity-50 text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-2"
           >
-            <span>View</span>
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isSaving ? "Saving..." : saveSuccess ? "Saved!" : "Save"}</span>
           </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
-              className="px-3 py-1 bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs transition cursor-pointer flex items-center gap-1"
-            >
-              <span>More actions</span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#616161]" />
-            </button>
-            {isMoreActionsOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-44 bg-white border border-[#e1e3e5] rounded-xl shadow-2xl p-1 z-50 animate-in fade-in-0 zoom-in-95 duration-100 flex flex-col gap-0.5 text-[13px]">
-                <button
-                  type="button"
-                  onClick={() => setIsMoreActionsOpen(false)}
-                  className="w-full text-left px-3 py-1.5 text-[#303030] hover:bg-[#f6f6f7] rounded-lg transition font-medium"
-                >
-                  Create product view
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsMoreActionsOpen(false)}
-                  className="w-full text-left px-3 py-1.5 text-red-600 hover:bg-[#fff5f5] rounded-lg transition font-medium"
-                >
-                  Delete collection
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
+      {/* Success Notification Banner */}
+      {saveSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2.5 rounded-xl text-[13px] font-medium flex items-center gap-2 shadow-2xs">
+          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Collection updated successfully across dashboard and webstore.</span>
+        </div>
+      )}
+
+      {/* Error Notification Banner */}
+      {saveError && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2.5 rounded-xl text-[13px] font-medium flex items-center gap-2 shadow-2xs">
+          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{saveError}</span>
+        </div>
+      )}
+
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        
         {/* Left Column (~68%) */}
         <div className="lg:col-span-2 space-y-4">
-          
-          {/* Card 1: Main Header Card (Title + Description + Image) matching Screenshot 1 */}
+          {/* Card 1: Image + Title + Description Header Card */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4 relative">
             <div className="flex gap-5 items-start">
-              {/* Left Image Uploader Dropzone Box matching Screenshot 1 */}
-              <label className="w-36 h-36 border border-dashed border-[#c9cccf] rounded-2xl flex flex-col items-center justify-center bg-white hover:bg-[#fafafa] transition cursor-pointer shrink-0 relative group shadow-2xs">
-                <input type="file" accept="image/*" className="hidden" />
-                <Upload className="w-6 h-6 text-[#616161] group-hover:scale-110 transition" />
+              {/* Left Image Box */}
+              <label className="w-36 h-36 border border-dashed border-[#c9cccf] rounded-2xl flex flex-col items-center justify-center bg-white hover:bg-[#fafafa] transition cursor-pointer shrink-0 relative group shadow-2xs overflow-hidden">
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                {collectionImage ? (
+                  <img src={collectionImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Upload className="w-6 h-6 text-[#616161] group-hover:scale-110 transition" />
+                )}
               </label>
 
-              {/* Right Input Fields matching Screenshot 1 */}
+              {/* Right Input Fields */}
               <div className="flex-1 space-y-2 pt-1">
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Add title"
+                  placeholder="Collection title"
                   className="w-full text-[20px] font-bold text-[#1a1a1a] placeholder:text-[#8a8a8a] border-b border-transparent focus:border-[#005bd3] outline-none py-0.5 bg-transparent"
                 />
                 <textarea
@@ -171,145 +318,97 @@ export default function CollectionEditPage({ params }: { params: Promise<{ id: s
                 />
               </div>
             </div>
-
-            {/* Bottom Right Sales Channels Indicator matching Screenshot 1 */}
-            <div className="flex justify-end pt-2 border-t border-[#f1f2f4]">
-              <div className="text-[12.5px] text-[#616161] font-medium flex items-center gap-1.5 hover:text-[#1a1a1a] cursor-pointer transition">
-                <Users className="w-4 h-4 text-[#616161]" />
-                <span>4 channels</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </div>
-            </div>
           </div>
 
-          {/* Card 2: Collection Items Cards Grid Card matching Screenshot 1 & 2 */}
+          {/* Card 2: Collection Items List */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Collection items</h3>
-                <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                  {collectionProducts.length}
+                <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Products in collection</h3>
+                <span className="bg-[#f1f2f4] text-[#616161] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                  {assignedProducts.length}
                 </span>
               </div>
-
-              {/* Default Sort Selector Dropdown matching Screenshot 1 */}
-              <div className="flex items-center gap-1.5 text-[12.5px] text-[#616161]">
-                <span>Default sort:</span>
-                <div className="relative">
-                  <select
-                    value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
-                    className="appearance-none font-semibold text-[#1a1a1a] bg-transparent outline-none pr-5 cursor-pointer"
-                  >
-                    <option>Most relevant</option>
-                    <option>Best selling</option>
-                    <option>Product title A-Z</option>
-                    <option>Product title Z-A</option>
-                    <option>Price low to high</option>
-                    <option>Price high to low</option>
-                    <option>Created new to old</option>
-                    <option>Created old to new</option>
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#616161] absolute right-0 top-1 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Toolbar View Switcher matching Screenshot 1 */}
-            <div className="flex items-center justify-between border-b border-[#f1f2f4] pb-3">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "p-1.5 rounded-lg border transition cursor-pointer",
-                    viewMode === "grid" ? "bg-[#f1f2f4] border-[#c9cccf] text-[#1a1a1a]" : "bg-white border-transparent text-[#616161] hover:bg-[#f6f6f7]"
-                  )}
-                  title="Grid view"
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "p-1.5 rounded-lg border transition cursor-pointer",
-                    viewMode === "list" ? "bg-[#f1f2f4] border-[#c9cccf] text-[#1a1a1a]" : "bg-white border-transparent text-[#616161] hover:bg-[#f6f6f7]"
-                  )}
-                  title="List view"
-                >
-                  <List className="w-4 h-4" />
-                </button>
-                <span className="bg-[#f1f2f4] text-[#616161] text-[12px] font-medium px-2 py-0.5 rounded-lg ml-1">
-                  4
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button type="button" className="p-1.5 text-[#616161] hover:text-[#1a1a1a] hover:bg-[#f1f2f4] rounded-lg transition">
-                  <SlidersHorizontal className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Active Filter Pill Bar matching Screenshot 1 */}
-            <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
-              <span className="bg-white border border-[#c9cccf] text-[#303030] px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-2xs">
-                <span>Status: Active, Draft, Unlisted, and Suspended</span>
-                <X className="w-3.5 h-3.5 text-[#616161] hover:text-[#1a1a1a] cursor-pointer" />
-              </span>
-              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] font-medium transition cursor-pointer">
-                Clear all
+              <button
+                type="button"
+                onClick={() => setIsAddProductsModalOpen(true)}
+                className="text-[13px] font-medium text-[#005bd3] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add products</span>
               </button>
             </div>
 
-            {/* Rich Product Cards Grid matching Screenshot 1 & 2 */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-              {collectionProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="group relative bg-white rounded-2xl p-2.5 border border-[#e1e3e5] space-y-2 flex flex-col justify-between hover:shadow-md transition cursor-pointer"
-                >
-                  {/* Top Image Box with Badge & Hover Remove Icon (Screenshot 2) */}
-                  <div className={cn("w-full h-32 rounded-xl bg-gradient-to-tr flex items-end justify-end p-2 relative overflow-hidden", product.bgGradient)}>
-                    {/* Hover Remove (✕) Icon on Top Right Corner matching Screenshot 2 */}
+            {/* Products List / Grid */}
+            {assignedProducts.length === 0 ? (
+              <div className="p-8 text-center text-[13px] text-[#616161] border border-dashed border-[#c9cccf] rounded-xl">
+                No products currently in this collection. Click &quot;Add products&quot; to assign products.
+              </div>
+            ) : (
+              <div className="divide-y divide-[#f1f1f1] border border-[#e1e3e5] rounded-xl overflow-hidden">
+                {assignedProducts.map((p) => (
+                  <div key={p.id} className="p-3 flex items-center justify-between bg-white hover:bg-[#fafafa] transition">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <ProductIcon className="w-5 h-5 fill-current text-[#8c8c8c]" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-[#1a1a1a] truncate">{p.name}</div>
+                        <div className="text-[12px] text-[#616161]">{p.price}</div>
+                      </div>
+                    </div>
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveProduct(product.id);
-                      }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 hover:bg-white text-[#616161] hover:text-red-600 shadow-md flex items-center justify-center transition opacity-0 group-hover:opacity-100 z-10 cursor-pointer"
-                      title="Remove from collection"
+                      onClick={() => handleRemoveProduct(p.id)}
+                      className="p-1 text-[#616161] hover:text-red-600 rounded transition cursor-pointer"
+                      title="Remove product from collection"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     </button>
-
-                    {/* Bottom Right Quantity Badge Overlay matching Screenshot 1 & 2 */}
-                    <div className="w-5 h-5 rounded-full bg-white/80 backdrop-blur-xs text-[#1a1a1a] text-[11px] font-bold flex items-center justify-center shadow-2xs">
-                      {product.badge}
-                    </div>
                   </div>
-
-                  {/* Product Title Label matching Screenshot 1 & 2 */}
-                  <div className="px-0.5">
-                    <div className="text-[12.5px] font-semibold text-[#1a1a1a] leading-tight line-clamp-2" title={product.title}>
-                      {product.title}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Card 3: Theme Template matching Screenshot 2 */}
+          {/* Card 3: Search Engine Listing Preview */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Theme template</h3>
-              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] transition">
-                <Eye className="w-4 h-4" />
-              </button>
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Search engine listing</h3>
+            <div className="space-y-1 pt-1">
+              <div className="text-[14px] text-[#1a0dab] font-medium hover:underline cursor-pointer truncate">
+                {title || "Collection Title"} — Satoshi DeFi Store
+              </div>
+              <div className="text-[12px] text-[#006621] truncate">
+                https://satoshidefi.store/products?category={encodeURIComponent(title)}
+              </div>
+              <div className="text-[12.5px] text-[#545454] line-clamp-2">
+                {description || "No description provided."}
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar Column (~32%) */}
+        <div className="space-y-4">
+          {/* Card 1: Publishing / Status */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Publishing</h3>
+            <div className="text-[13px] font-medium text-[#303030] flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#616161]" />
+              <span>Online Store &amp; Catalog</span>
+            </div>
+            <p className="text-[12px] text-[#616161]">
+              This collection is automatically synced to the storefront categories menu, category filter pills, and hardware showcase.
+            </p>
+          </div>
+
+          {/* Card 2: Theme template */}
+          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
+            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Theme template</h3>
             <div className="relative">
               <select
                 value={themeTemplate}
@@ -322,76 +421,29 @@ export default function CollectionEditPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          {/* Card 4: Search Engine Listing matching Screenshot 2 */}
-          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Search engine listing</h3>
-              <button type="button" className="text-[#616161] hover:text-[#1a1a1a] p-1 rounded-md transition cursor-pointer">
-                <Edit2 className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="space-y-1 pt-1">
-              <div className="text-[13px] text-[#303030]">Learnix LK</div>
-              <div className="text-[12px] text-[#006621]">https://learnix.lk › collections › {handle}</div>
-              <div className="text-[16px] font-semibold text-[#005bd3] hover:underline cursor-pointer pt-0.5">
-                {title}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar Column (~32%) matching Screenshot 1 */}
-        <div className="space-y-4">
-          
-          {/* Card 1: Products Condition Box matching Screenshot 1 */}
-          <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between text-[13.5px] font-semibold text-[#1a1a1a]">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-[#1a1a1a]" />
-                <span>Products</span>
-              </div>
-              <ChevronDown className="w-4 h-4 text-[#616161] cursor-pointer" />
-            </div>
-
-            {/* Inner Condition Box with count pill on right matching Screenshot 1 */}
-            <div className="bg-[#f6f6f7] border border-[#e1e3e5] rounded-2xl p-3 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 text-[12.5px] font-semibold bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition shadow-2xs flex items-center gap-1.5 text-[#303030] cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-[#616161]" />
-                  <span>Add condition</span>
-                </button>
-
-                {/* Right Count Pill Badge matching Screenshot 1 (🏷️ 8) */}
-                <div className="flex items-center gap-1.5 bg-white border border-[#c9cccf] px-2.5 py-1 rounded-full text-[12px] font-bold text-[#1a1a1a] shadow-2xs">
-                  <Tag className="w-3 h-3 text-[#616161]" />
-                  <span>{collectionProducts.length}</span>
-                </div>
-              </div>
-
-              <div className="pt-1">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 text-[12.5px] font-semibold bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition shadow-2xs flex items-center gap-1.5 text-[#303030] cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-[#616161]" />
-                  <span>Exclude</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Dotted Plus Container below matching Screenshot 1 */}
-            <div className="border border-dashed border-[#c9cccf] hover:border-[#a1a1a1] rounded-2xl p-4 flex items-center justify-center bg-white text-[#616161] transition cursor-pointer">
-              <Plus className="w-5 h-5 text-[#616161]" />
-            </div>
+          {/* Danger Zone: Delete Collection */}
+          <div className="bg-white border border-red-200 rounded-2xl p-5 shadow-2xs space-y-3">
+            <h3 className="text-[13.5px] font-semibold text-red-600">Delete collection</h3>
+            <p className="text-[12.5px] text-[#616161]">
+              Deleting this collection will not delete the products it contains.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 text-[13px] font-semibold rounded-xl transition cursor-pointer"
+            >
+              Delete collection
+            </button>
           </div>
         </div>
       </div>
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-[#e1e3e5] px-6 py-3 flex items-center justify-end z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-[#e1e3e5] px-6 py-3 flex items-center justify-between z-40">
+        <div>
+          {saveError && <span className="text-xs text-red-600 font-medium">{saveError}</span>}
+          {saveSuccess && <span className="text-xs text-emerald-600 font-medium">Changes saved successfully</span>}
+        </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -402,13 +454,125 @@ export default function CollectionEditPage({ params }: { params: Promise<{ id: s
           </button>
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSave}
-            className="px-5 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer"
+            className="px-5 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] disabled:opacity-50 text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-2"
           >
-            Save
+            {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            <span>{isSaving ? "Saving..." : "Save"}</span>
           </button>
         </div>
       </div>
+
+      {/* Add Products Modal Overlay */}
+      {isAddProductsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4 select-none animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden text-[#1a1a1a] border border-[#e1e3e5] animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-[#e1e3e5] flex items-center justify-between">
+              <h2 className="text-[16px] font-semibold text-[#1a1a1a]">Add products to collection</h2>
+              <button
+                type="button"
+                onClick={() => setIsAddProductsModalOpen(false)}
+                className="p-1 rounded-md text-[#616161] hover:text-[#1a1a1a] hover:bg-[#f1f2f4] transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 border-b border-[#e1e3e5]">
+              <div className="relative flex items-center bg-white border border-[#c9cccf] rounded-xl px-3 py-1.5 focus-within:border-[#005bd3]">
+                <Search className="w-4 h-4 text-[#616161] mr-2 shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search products"
+                  value={productSearchQuery}
+                  onChange={(e) => setProductSearchQuery(e.target.value)}
+                  className="w-full outline-none text-[13px] text-[#1a1a1a]"
+                />
+              </div>
+            </div>
+
+            <div className="max-h-72 overflow-y-auto p-2 space-y-1">
+              {availableProducts
+                .filter((p) => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()))
+                .map((p) => {
+                  const isChecked = assignedProducts.some((ap) => ap.id === p.id);
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => handleToggleProduct(p)}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl cursor-pointer transition",
+                        isChecked ? "bg-[#f4f6f8]" : "hover:bg-[#fafafa]"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="rounded border-[#c9cccf] cursor-pointer"
+                        />
+                        <div>
+                          <div className="text-[13px] font-semibold text-[#1a1a1a]">{p.name}</div>
+                          <div className="text-[11.5px] text-[#616161]">{p.price}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            <div className="px-6 py-3 border-t border-[#e1e3e5] bg-[#fafafa] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsAddProductsModalOpen(false)}
+                className="px-4 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] text-white rounded-xl text-[13px] font-semibold transition cursor-pointer shadow-2xs"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e1e3e5] overflow-hidden">
+            <div className="p-6 space-y-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h3 className="text-[16px] font-bold text-[#1a1a1a]">
+                Delete {title || "this collection"}?
+              </h3>
+              <p className="text-[13px] text-[#616161]">
+                This action cannot be undone. This will delete the collection, but the products inside it will remain in your store.
+              </p>
+            </div>
+            <div className="px-6 py-3.5 bg-[#fafafa] border-t border-[#e1e3e5] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-1.5 text-[13px] font-medium text-[#303030] bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                className="px-4 py-1.5 text-[13px] font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-2"
+              >
+                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isDeleting ? "Deleting..." : "Delete collection"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -19,16 +19,10 @@ import {
 } from "lucide-react";
 import { CollectionIcon, ProductIcon } from "@shopify/polaris-icons";
 import { cn } from "@/lib/utils";
-
-// Sample products for "Add products" modal
-const sampleProductsForCollection = [
-  { id: "1", name: "Abacus Year 2 Workbook 3", price: "LKR 450.00", status: "Active" },
-  { id: "2", name: "Abacus Year 2 Textbook", price: "LKR 600.00", status: "Active" },
-  { id: "3", name: "THE SECRET SEVEN - SECRET SEVEN ADVENTURE", price: "LKR 750.00", status: "Active" },
-  { id: "4", name: "THE BUDDHIST WAY OF LIFE FOR GRADE 5 STU", price: "LKR 900.00", status: "Draft" },
-  { id: "5", name: "Sinhala Wada Potha 3", price: "LKR 350.00", status: "Active" },
-  { id: "6", name: "Sinhala Wada Potha 2", price: "LKR 300.00", status: "Active" },
-];
+import { createCollectionAction } from "@/app/actions/collections";
+import { getAdminProductsAction } from "@/app/actions/products";
+import { uploadProductImageAction } from "@/app/actions/upload";
+import { useEffect } from "react";
 
 export default function AddCollectionPage() {
   const router = useRouter();
@@ -36,21 +30,88 @@ export default function AddCollectionPage() {
   // Form States
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [collectionImage, setCollectionImage] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [themeTemplate, setThemeTemplate] = useState("Default collection");
   
   // Products Modal & Conditions States
+  const [availableProducts, setAvailableProducts] = useState<Array<{ id: string; name: string; price: string; status: string }>>([]);
   const [isAddProductsModalOpen, setIsAddProductsModalOpen] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [conditions, setConditions] = useState<Array<{ id: number; text: string }>>([]);
   const [productSearchQuery, setProductSearchQuery] = useState("");
 
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        const prods = await getAdminProductsAction();
+        setAvailableProducts(
+          prods.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: `$${p.rawPrice.toFixed(2)}`,
+            status: p.status,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to load products for collection:", err);
+      }
+    }
+    loadProducts();
+  }, []);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingImage(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await uploadProductImageAction(formData);
+      if (res.success && res.url) {
+        setCollectionImage(res.url);
+      }
+    } catch (err) {
+      console.error("Image upload failed:", err);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleAddCondition = () => {
     setConditions((prev) => [...prev, { id: Date.now(), text: "Product title equals Abacus" }]);
   };
 
-  const handleSave = () => {
-    router.push("/admin/products/collections");
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setSaveError("Please enter a collection title.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      const res = await createCollectionAction({
+        title: title.trim(),
+        description: description.trim(),
+        image: collectionImage || undefined,
+        productIds: selectedProductIds,
+      });
+
+      if (res.success) {
+        router.push("/admin/products/collections");
+      } else {
+        setSaveError(res.error || "Failed to create collection");
+      }
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleSelectProduct = (id: string) => {
@@ -86,9 +147,13 @@ export default function AddCollectionPage() {
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-4 relative">
             <div className="flex gap-5 items-start">
               {/* Left Image Uploader Box matching Screenshot 1 */}
-              <label className="w-36 h-36 border border-dashed border-[#c9cccf] rounded-2xl flex flex-col items-center justify-center bg-white hover:bg-[#fafafa] transition cursor-pointer shrink-0 relative group shadow-2xs">
-                <input type="file" accept="image/*" className="hidden" />
-                <Upload className="w-6 h-6 text-[#616161] group-hover:scale-110 transition" />
+              <label className="w-36 h-36 border border-dashed border-[#c9cccf] rounded-2xl flex flex-col items-center justify-center bg-white hover:bg-[#fafafa] transition cursor-pointer shrink-0 relative group shadow-2xs overflow-hidden">
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                {collectionImage ? (
+                  <img src={collectionImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Upload className="w-6 h-6 text-[#616161] group-hover:scale-110 transition" />
+                )}
               </label>
 
               {/* Right Input Fields matching Screenshot 1 */}
@@ -341,7 +406,7 @@ export default function AddCollectionPage() {
             </div>
 
             <div className="max-h-72 overflow-y-auto p-2 space-y-1">
-              {sampleProductsForCollection
+              {availableProducts
                 .filter((p) => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()))
                 .map((p) => {
                   const isChecked = selectedProductIds.includes(p.id);

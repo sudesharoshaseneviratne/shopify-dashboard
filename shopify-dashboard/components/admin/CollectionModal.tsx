@@ -1,23 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
+import { getAdminCollectionsAction } from "@/app/actions/collections";
 
-const sampleCollections = [
-  "Abacus Workbook",
-  "All Products",
-  "Best Sellers",
-  "Building Blocks",
-  "Cambridge Checkpoint",
-  "Cambridge Global English",
-  "Cambridge IGCSE",
-  "Cambridge International AS & A Level",
-  "Cambridge Literature",
-  "Cambridge Lower Secondary",
-  "Cambridge Primary Science",
-  "Cambridge University Press",
-  "English Workbook",
-  "Workbooks & Textbooks",
+const fallbackCollections = [
+  "Cold Storage",
+  "Mining & ASICs",
+  "Sovereign Nodes",
+  "Security & Backup",
+  "Cryptographic Relics"
 ];
 
 interface CollectionModalProps {
@@ -35,15 +27,26 @@ export function CollectionModal({
   selectedCount,
   onSave,
 }: CollectionModalProps) {
+  const [collectionsList, setCollectionsList] = useState<string[]>(fallbackCollections);
   const [searchQuery, setSearchQuery] = useState("");
   const [checkedCollections, setCheckedCollections] = useState<Set<string>>(new Set());
 
+  useEffect(() => {
+    if (isOpen) {
+      getAdminCollectionsAction().then((cols) => {
+        if (cols && cols.length > 0) {
+          setCollectionsList(cols.map((c) => c.title));
+        }
+      }).catch((err) => console.error("Failed to load collections in modal:", err));
+    }
+  }, [isOpen]);
+
   const filteredCollections = useMemo(() => {
-    if (!searchQuery.trim()) return sampleCollections;
-    return sampleCollections.filter((c) =>
+    if (!searchQuery.trim()) return collectionsList;
+    return collectionsList.filter((c) =>
       c.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, collectionsList]);
 
   if (!isOpen) return null;
 

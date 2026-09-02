@@ -29,14 +29,33 @@ import {
 import { cn } from "@/lib/utils";
 import { CollectionModal } from "@/components/admin/CollectionModal";
 import { ProductIcon } from "@shopify/polaris-icons";
+import { createProductAction } from "@/app/actions/products";
+import { getAdminCollectionsAction } from "@/app/actions/collections";
+import { uploadProductImageAction } from "@/app/actions/upload";
 
 export default function AddProductPage() {
   const router = useRouter();
 
   // Main Form States
-  const [title, setTitle] = useState("Short sleeve t-shirt");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Choose a product category");
+  const [category, setCategory] = useState("Cold Storage");
+  const [availableCollections, setAvailableCollections] = useState<string[]>([
+    "Cold Storage",
+    "Mining & ASICs",
+    "Sovereign Nodes",
+    "Cryptographic Relics",
+    "Security & Backup"
+  ]);
+
+  useEffect(() => {
+    getAdminCollectionsAction().then((cols) => {
+      if (cols && cols.length > 0) {
+        setAvailableCollections(cols.map((c) => c.title));
+        setCategory(cols[0].title);
+      }
+    }).catch((err) => console.error("Failed to load collections in new product:", err));
+  }, []);
   const [price, setPrice] = useState("0.00");
   const [compareAtPrice, setCompareAtPrice] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
@@ -94,8 +113,83 @@ export default function AddProductPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSave = () => {
-    router.push("/admin/products");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Image Upload State (Supabase Storage)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProvider, setUploadProvider] = useState<"supabase" | "cloudflare" | "local" | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingImage(true);
+    setUploadError(null);
+
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await uploadProductImageAction(formData);
+
+        if (res.success && res.url) {
+          setUploadedImages((prev) => [...prev, res.url!]);
+          if (res.provider) setUploadProvider(res.provider);
+        } else {
+          setUploadError(res.error || "Failed to upload image");
+        }
+      }
+    } catch (err) {
+      setUploadError(String(err));
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setSaveError("Please enter a product title.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+
+      const parsedPrice = parseFloat(price.replace(/[^0-9.]/g, "")) || 0;
+      const parsedQty = parseInt(quantity, 10) || 0;
+      const cleanCategory = category !== "Choose a product category" ? category : "Cold Storage";
+
+      const res = await createProductAction({
+        name: title.trim(),
+        description: description.trim(),
+        category: cleanCategory,
+        priceUsd: parsedPrice,
+        inventory: parsedQty,
+        status: selectedStatus,
+        tagline: description ? description.slice(0, 120) : undefined,
+        images: uploadedImages,
+      });
+
+      if (res.success) {
+        router.push("/admin/products");
+      } else {
+        setSaveError(res.error || "Failed to create product");
+      }
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddTag = () => {
@@ -181,26 +275,94 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* Card 2: Media */}
+          {/* Card 2: Media (Supabase Storage) */}
           <div className="bg-white border border-[#e1e3e5] rounded-2xl p-5 shadow-2xs space-y-3">
-            <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Media</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Media</h3>
+              {uploadProvider === "supabase" ? (
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Supabase Storage Active
+                </span>
+              ) : uploadProvider === "cloudflare" ? (
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                  Cloudflare R2 Active
+                </span>
+              ) : null}
+            </div>
+
+            {/* Hidden native file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              multiple
+              className="hidden"
+            />
+
+            {/* Uploaded Images Preview Grid */}
+            {uploadedImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 pb-2">
+                {uploadedImages.map((imgUrl, idx) => (
+                  <div 
+                    key={idx} 
+                    className="relative group rounded-xl border border-[#e1e3e5] overflow-hidden aspect-square bg-slate-50 flex items-center justify-center shadow-2xs"
+                  >
+                    <img 
+                      src={imgUrl} 
+                      alt={`Product media ${idx + 1}`} 
+                      className="w-full h-full object-cover" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-sm"
+                      title="Remove image"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    {idx === 0 && (
+                      <span className="absolute bottom-1.5 left-1.5 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/80 text-white">
+                        Cover
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="border border-dashed border-[#c9cccf] rounded-2xl p-7 text-center bg-[#fafafa] flex flex-col items-center justify-center gap-2.5">
+              {uploadError && (
+                <p className="text-xs text-red-600 font-medium pb-1">{uploadError}</p>
+              )}
+
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="px-4 py-1.5 bg-white border border-[#c9cccf] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs hover:bg-[#f6f6f7] transition cursor-pointer"
+                  disabled={isUploadingImage}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-1.5 bg-white border border-[#c9cccf] text-[#1a1a1a] rounded-xl text-[13px] font-semibold shadow-2xs hover:bg-[#f6f6f7] transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
-                  Upload new
+                  {isUploadingImage ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-[#1a1a1a] border-t-transparent rounded-full animate-spin" />
+                      <span>Uploading to Supabase...</span>
+                    </>
+                  ) : (
+                    <span>Upload new</span>
+                  )}
                 </button>
                 <button
                   type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   className="px-4 py-1.5 text-[#303030] hover:text-[#1a1a1a] rounded-xl text-[13px] font-medium transition cursor-pointer"
                 >
-                  Select existing
+                  Select from device
                 </button>
               </div>
               <p className="text-[12px] text-[#616161]">
-                Accepts images, videos, or 3D models
+                Accepts PNG, JPG, WebP, SVG (Uploaded directly to Supabase &apos;products&apos; bucket)
               </p>
             </div>
           </div>
@@ -215,15 +377,16 @@ export default function AddProductPage() {
                 className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white text-[#303030] cursor-pointer"
               >
                 <option>Choose a product category</option>
-                <option>Apparel & Accessories</option>
-                <option>Shirts & Tops</option>
-                <option>Books & Media</option>
-                <option>Textbooks</option>
+                <option>Cold Storage</option>
+                <option>Mining & ASICs</option>
+                <option>Sovereign Nodes</option>
+                <option>Security & Backup</option>
+                <option>Cryptographic Relics</option>
               </select>
               <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
             </div>
             <p className="text-[12px] text-[#616161] pt-0.5">
-              Determines tax rates and adds metafields to improve search, filters, and cross-channel sales
+              Determines cryptographic tagging, storefront placement, and filter catalog index
             </p>
           </div>
 
@@ -755,6 +918,22 @@ export default function AddProductPage() {
             </div>
 
             <div className="space-y-1">
+              <label className="text-[12px] font-medium text-[#303030]">Category</label>
+              <div className="relative">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
+                >
+                  {availableCollections.map((col) => (
+                    <option key={col} value={col}>{col}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
               <label className="text-[12px] font-medium text-[#303030]">Type</label>
               <div className="relative">
                 <select
@@ -865,7 +1044,12 @@ export default function AddProductPage() {
       </div>
 
       {/* Floating Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-[#e1e3e5] px-6 py-3 flex items-center justify-end z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-[#e1e3e5] px-6 py-3 flex items-center justify-between z-40">
+        <div>
+          {saveError && (
+            <span className="text-xs text-red-600 font-medium">{saveError}</span>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -876,10 +1060,11 @@ export default function AddProductPage() {
           </button>
           <button
             type="button"
+            disabled={isSaving}
             onClick={handleSave}
-            className="px-5 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer"
+            className="px-5 py-1.5 bg-[#1a1a1a] hover:bg-[#303030] disabled:opacity-50 text-white text-[13px] font-semibold rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-2"
           >
-            Save
+            {isSaving ? "Saving to Supabase..." : "Save"}
           </button>
         </div>
       </div>

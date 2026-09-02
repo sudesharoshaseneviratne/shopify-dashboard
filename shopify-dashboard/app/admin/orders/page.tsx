@@ -32,6 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useTableLogic } from "@/hooks/admin/useTableLogic";
 import { initialOrdersList as initialOrders } from "@/lib/admin/ordersData";
+import { getAdminOrdersAction } from "@/app/actions/orders";
 
 const categoryOptionsMap: Record<string, string[]> = {
   "Order status": ["Open", "Archived", "Canceled"],
@@ -45,6 +46,25 @@ const categoryOptionsMap: Record<string, string[]> = {
 export default function Orders() {
   const router = useRouter();
   const [ordersList, setOrdersList] = useState(initialOrders);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    getAdminOrdersAction()
+      .then((data) => {
+        if (mounted && data && data.length > 0) {
+          setOrdersList(data);
+        }
+      })
+      .catch((err) => console.error("Error fetching orders:", err))
+      .finally(() => {
+        if (mounted) setIsLoadingOrders(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const {
     sortedData: orders,

@@ -272,3 +272,259 @@ input[type="checkbox"]:indeterminate::after {
   color: var(--p-color-text-badge-neutral);
   border: 1px solid var(--p-color-border-hover);
 }
+
+/* ==========================================================================
+   BITCOIN DEFI DESIGN SYSTEM TOKENS & UTILITIES
+   ========================================================================== */
+
+:root {
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+
+  --btc-void: #030304;
+  --btc-surface: #0F1115;
+  --btc-surface-elevated: #15181E;
+  --btc-pure-light: #FFFFFF;
+  --btc-stardust: #94A3B8;
+  --btc-border: #1E293B;
+  --btc-orange: #F7931A;
+  --btc-burnt-orange: #EA580C;
+  --btc-gold: #FFD600;
+}
+
+.font-heading {
+  font-family: var(--font-space-grotesk), var(--p-font-family);
+}
+
+.font-body {
+  font-family: var(--font-inter), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains-mono), monospace;
+}
+
+/* Background Grid Pattern with Vignette Fade */
+.bg-grid-pattern {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, rgba(30, 41, 59, 0.45) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 41, 59, 0.45) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at center, black 45%, transparent 95%);
+  -webkit-mask-image: radial-gradient(circle at center, black 45%, transparent 95%);
+}
+
+.bg-grid-dense {
+  background-size: 24px 24px;
+  background-image:
+    linear-gradient(to right, rgba(247, 147, 26, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(247, 147, 26, 0.08) 1px, transparent 1px);
+}
+
+/* Glow Shadows */
+.glow-orange {
+  box-shadow: 0 0 20px -5px rgba(234, 88, 12, 0.5);
+}
+
+.glow-orange-lg {
+  box-shadow: 0 0 35px -5px rgba(247, 147, 26, 0.65);
+}
+
+.glow-gold {
+  box-shadow: 0 0 25px rgba(255, 214, 0, 0.35);
+}
+
+.glow-card {
+  box-shadow: 0 0 50px -10px rgba(247, 147, 26, 0.12);
+}
+
+.glow-card-hover:hover {
+  box-shadow: 0 0 35px -5px rgba(247, 147, 26, 0.3), inset 0 0 20px rgba(247, 147, 26, 0.05);
+}
+
+.glow-input:focus-within {
+  box-shadow: 0 10px 25px -8px rgba(247, 147, 26, 0.4);
+}
+
+/* Custom Animation Keyframes */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(1deg);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(14px) rotate(-1deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 15px rgba(247, 147, 26, 0.5));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 30px rgba(255, 214, 0, 0.8));
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-slow-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(1000%);
+  }
+}
+
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 8s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 22s linear infinite;
+}
+
+.animate-spin-slow-reverse {
+  animation: spin-slow-reverse 16s linear infinite;
+}
+
+.animate-scanline {
+  animation: scanline 8s linear infinite;
+}
+
+/* Corner Accents Utility */
+.corner-accent-tl {
+  position: relative;
+}
+.corner-accent-tl::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #F7931A;
+  border-left: 2px solid #F7931A;
+  border-top-left-radius: 4px;
+}
+
+.corner-accent-br {
+  position: relative;
+}
+.corner-accent-br::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 2px solid #F7931A;
+  border-right: 2px solid #F7931A;
+  border-bottom-right-radius: 4px;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 32s linear infinite;
+}
+
+/* ==========================================================================
+   NEO-BRUTALIST SOLID OFFSET SHADOWS (With Curved Border-Radius Support)
+   ========================================================================== */
+.shadow-neo-xs {
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.shadow-neo-sm {
+  box-shadow: 3px 3px 0px 0px #000000;
+}
+
+.shadow-neo {
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.shadow-neo-md {
+  box-shadow: 5px 5px 0px 0px #000000;
+}
+
+.shadow-neo-lg {
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+.shadow-neo-xl {
+  box-shadow: 8px 8px 0px 0px #000000;
+}
+
+.shadow-neo-card {
+  box-shadow: 4px 4px 0px 0px #000000;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shadow-neo-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px 0px #000000;
+}
+
+.shadow-neo-btn {
+  box-shadow: 3px 3px 0px 0px #000000;
+  transition: all 0.15s ease;
+}
+
+.shadow-neo-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px #000000;
+}
+
+.shadow-neo-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+
+
+

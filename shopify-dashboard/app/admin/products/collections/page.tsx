@@ -23,31 +23,32 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTableLogic } from "@/hooks/admin/useTableLogic";
-
-const initialCollections = [
-  { id: 1, title: "Sinhala Books", products: 8, conditions: "", updated: "Jul 15 at 2:30 pm" },
-  { id: 2, title: "Generic Publishers", products: 67, conditions: "", updated: "Jul 14 at 11:20 am" },
-  { id: 3, title: "Best Sellers", products: 291, conditions: "", updated: "Jul 12 at 4:15 pm" },
-  { id: 4, title: "New Arrival", products: 292, conditions: "", updated: "Jul 10 at 9:45 am" },
-  { id: 5, title: "All Products", products: 292, conditions: "", updated: "Jul 08 at 1:10 pm" },
-  { id: 6, title: "Power Maths", products: 3, conditions: "", updated: "Jul 05 at 10:30 am" },
-  { id: 7, title: "Pearson Education", products: 86, conditions: "", updated: "Jul 02 at 3:50 pm" },
-  { id: 8, title: "Oxford English", products: 14, conditions: "", updated: "Jun 29 at 8:20 am" },
-  { id: 9, title: "Oxford University Press", products: 61, conditions: "", updated: "Jun 25 at 4:00 pm" },
-  { id: 10, title: "General Practice & Workbooks", products: 4, conditions: "", updated: "Jun 20 at 11:15 am" },
-  { id: 11, title: "Religious Studies", products: 3, conditions: "", updated: "Jun 18 at 2:40 pm" },
-  { id: 12, title: "Oxford Literature", products: 2, conditions: "", updated: "Jun 15 at 9:00 am" },
-  { id: 13, title: "Cambridge Lower Secondary", products: 7, conditions: "", updated: "Jun 12 at 5:10 pm" },
-  { id: 14, title: "Pearson & Longman Titles", products: 6, conditions: "", updated: "Jun 10 at 1:25 pm" },
-  { id: 15, title: "Junior Artist", products: 6, conditions: "", updated: "Jun 08 at 10:40 am" },
-  { id: 16, title: "Nelson Publishers", products: 32, conditions: "", updated: "Jun 05 at 4:15 pm" },
-  { id: 17, title: "Inspire Computing International", products: 16, conditions: "", updated: "Jun 02 at 11:30 am" },
-  { id: 18, title: "Abacus Workbook", products: 10, conditions: "", updated: "May 28 at 3:00 pm" },
-];
+import { 
+  getAdminCollectionsAction, 
+  bulkDeleteCollectionsAction, 
+  type AdminCollectionItem 
+} from "@/app/actions/collections";
 
 export default function Collections() {
   const router = useRouter();
-  const [collectionsList, setCollectionsList] = useState(initialCollections);
+  const [collectionsList, setCollectionsList] = useState<AdminCollectionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadCollections = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAdminCollectionsAction();
+      setCollectionsList(data);
+    } catch (err) {
+      console.error("Failed to load collections:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCollections();
+  }, []);
 
   const {
     sortedData: collections,
@@ -123,17 +124,23 @@ export default function Collections() {
       const q = searchQuery.toLowerCase();
       const matches =
         c.title.toLowerCase().includes(q) ||
-        c.conditions.toLowerCase().includes(q) ||
-        c.products.toString().includes(q);
+        (c.conditions && c.conditions.toLowerCase().includes(q)) ||
+        (c.productsCount !== undefined && c.productsCount.toString().includes(q));
       if (!matches) return false;
     }
     return true;
   });
 
-  const handleBulkDelete = () => {
-    setCollectionsList((prev) => prev.filter((c) => !selectedIds.has(c.id)));
-    setSelectedIds(new Set());
-    setDeleteConfirmOpen(false);
+  const handleBulkDelete = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      await bulkDeleteCollectionsAction(ids);
+      await loadCollections();
+      setSelectedIds(new Set());
+      setDeleteConfirmOpen(false);
+    } catch (err) {
+      console.error("Failed to delete collections:", err);
+    }
   };
 
   const renderSortIndicator = (colKey: string) => {
@@ -517,17 +524,21 @@ export default function Collections() {
                       </td>
                       <td className="pl-1 pr-3 py-1 align-middle font-semibold text-[#1a1a1a]">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0">
-                            <ImageIcon className="w-4 h-4 text-gray-300" />
+                          <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                            {c.image ? (
+                              <img src={c.image} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <CollectionIcon className="w-4 h-4 text-gray-400 fill-current" />
+                            )}
                           </div>
-                          <span className="truncate text-[#1a1a1a] no-underline" title={c.title}>
+                          <span className="truncate text-[#1a1a1a] hover:underline" title={c.title}>
                             {c.title}
                           </span>
                         </div>
                       </td>
                       {isColVisible("products") && (
                         <td className="px-4 py-1.5 text-[#1a1a1a] font-medium align-middle text-right">
-                          {c.products}
+                          {c.productsCount}
                         </td>
                       )}
                     </tr>

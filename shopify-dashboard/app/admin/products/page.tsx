@@ -31,6 +31,12 @@ import { useTableLogic } from "@/hooks/admin/useTableLogic";
 import { ImportProductsModal } from "@/components/admin/ImportProductsModal";
 import { ExportProductsModal } from "@/components/admin/ExportProductsModal";
 import { CollectionModal } from "@/components/admin/CollectionModal";
+import { 
+  getAdminProductsAction, 
+  bulkDeleteProductsAction, 
+  bulkUpdateProductStatusAction,
+  type AdminProductItem 
+} from "@/app/actions/products";
 
 const baseTitles = [
   "Abacus Year 2 Workbook 3",
@@ -110,7 +116,25 @@ const initialProducts = Array.from({ length: 120 }, (_, i) => {
 
 export default function ProductsPage() {
   const router = useRouter();
-  const [productsList, setProductsList] = useState(initialProducts);
+  const [productsList, setProductsList] = useState<AdminProductItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load products from Supabase
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getAdminProductsAction();
+      setProductsList(data);
+    } catch (err) {
+      console.error("Failed to load products from database:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const {
     sortedData: products,
@@ -142,27 +166,33 @@ export default function ProductsPage() {
   const [isBulkSelectionMenuOpen, setIsBulkSelectionMenuOpen] = useState(false);
   const [isMoreBulkActionsOpen, setIsMoreBulkActionsOpen] = useState(false);
 
-  const handleConfirmBulkAction = () => {
+  const handleConfirmBulkAction = async () => {
     if (!confirmModalType) return;
+    const ids = Array.from(selectedIds) as string[];
 
     if (confirmModalType === "active") {
       setProductsList((prev) =>
         prev.map((p) => (selectedIds.has(p.id) ? { ...p, status: "Active" } : p))
       );
+      await bulkUpdateProductStatusAction(ids, "Active");
     } else if (confirmModalType === "draft") {
       setProductsList((prev) =>
         prev.map((p) => (selectedIds.has(p.id) ? { ...p, status: "Draft" } : p))
       );
+      await bulkUpdateProductStatusAction(ids, "Draft");
     } else if (confirmModalType === "unlisted") {
       setProductsList((prev) =>
         prev.map((p) => (selectedIds.has(p.id) ? { ...p, status: "Unlisted" } : p))
       );
+      await bulkUpdateProductStatusAction(ids, "Unlisted");
     } else if (confirmModalType === "archive") {
       setProductsList((prev) =>
         prev.map((p) => (selectedIds.has(p.id) ? { ...p, status: "Archived" } : p))
       );
+      await bulkUpdateProductStatusAction(ids, "Archived");
     } else if (confirmModalType === "delete") {
       setProductsList((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+      await bulkDeleteProductsAction(ids);
     }
 
     setSelectedIds(new Set());
@@ -670,17 +700,30 @@ export default function ProductsPage() {
                         )}
                       </div>
 
-                      {/* Bulk Edit Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const ids = Array.from(selectedIds).join(",");
-                          router.push(`/admin/products/bulk-editor?ids=${encodeURIComponent(ids)}`);
-                        }}
-                        className="bg-white hover:bg-[#f6f6f7] border border-[#c9cccf] text-[#1a1a1a] px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer"
-                      >
-                        Bulk edit
-                      </button>
+                      {/* Edit Product / Bulk Edit Button */}
+                      {selectedIds.size === 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const id = Array.from(selectedIds)[0];
+                            router.push(`/admin/products/${id}`);
+                          }}
+                          className="bg-white hover:bg-[#f6f6f7] border border-[#c9cccf] text-[#1a1a1a] px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer"
+                        >
+                          Edit product
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ids = Array.from(selectedIds).join(",");
+                            router.push(`/admin/products/bulk-editor?ids=${encodeURIComponent(ids)}`);
+                          }}
+                          className="bg-white hover:bg-[#f6f6f7] border border-[#c9cccf] text-[#1a1a1a] px-3 py-1 rounded-lg text-[13px] font-medium shadow-2xs transition cursor-pointer"
+                        >
+                          Bulk edit
+                        </button>
+                      )}
 
                       {/* Dynamic Status Action Buttons based on selection */}
                       {showSetActiveBtn && (
@@ -826,7 +869,16 @@ export default function ProductsPage() {
               )}
             </thead>
             <tbody>
-              {paginatedProducts.length === 0 ? (
+              {isLoading ? (
+                <tr className="bg-white">
+                  <td colSpan={100} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="w-7 h-7 border-2 border-[#1a1a1a] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-[13px] font-medium text-[#616161]">Loading products from Supabase...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedProducts.length === 0 ? (
                 /* Empty state matching Shopify design */
                 <tr className="bg-white">
                   <td colSpan={100} className="py-16 text-center">
@@ -857,11 +909,12 @@ export default function ProductsPage() {
                   return (
                     <tr
                       key={product.id}
+                      onClick={() => router.push(`/admin/products/${product.id}`)}
                       className={`border-b border-[#f1f1f1] h-[38px] transition cursor-pointer ${
                         selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
                       }`}
                     >
-                      <td className="pl-3 pr-1 py-1 align-middle text-left">
+                      <td className="pl-3 pr-1 py-1 align-middle text-left" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selected}
@@ -872,16 +925,25 @@ export default function ProductsPage() {
                       </td>
                       <td className="pl-1 pr-3 py-1 align-middle font-semibold text-[#1a1a1a]">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0">
-                            {product.noImage ? (
+                          <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                            {product.image ? (
+                              <img src={product.image} alt="" className="w-full h-full object-cover" />
+                            ) : product.noImage ? (
                               <ImageIcon className="w-4.5 h-4.5 text-gray-300" />
                             ) : (
-                              <div className="w-full h-full bg-gradient-to-tr from-blue-300 to-green-300 rounded" />
+                              <div className="w-full h-full bg-gradient-to-tr from-amber-400 to-[#FFB800] rounded flex items-center justify-center text-[11px] font-black text-slate-950">
+                                ₿
+                              </div>
                             )}
                           </div>
-                          <span className="truncate text-[#1a1a1a] no-underline" title={product.name}>
+                          <Link
+                            href={`/admin/products/${product.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="truncate text-[#1a1a1a] hover:underline font-semibold"
+                            title={product.name}
+                          >
                             {product.name}
-                          </span>
+                          </Link>
                         </div>
                       </td>
                       {isColVisible("status") && (

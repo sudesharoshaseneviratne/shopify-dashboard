@@ -287,10 +287,9 @@ export function TopBar() {
                 </div>
 
                 {/* Visit Store Front Option */}
-                <a 
-                  href="https://www.saslk.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                <Link 
+                  href="/store" 
+                  onClick={() => setIsAccountOpen(false)}
                   className="flex items-center justify-between px-3 py-2 text-[13px] font-medium text-[#303030] hover:bg-[#f6f6f7] rounded-xl transition text-left mt-1 group"
                 >
                   <div className="flex items-center gap-2.5">
@@ -298,7 +297,7 @@ export function TopBar() {
                     <span>Visit Store Front</span>
                   </div>
                   <ExternalLink className="w-3.5 h-3.5 text-[#8a8a8a] group-hover:text-[#1a1a1a] transition" />
-                </a>
+                </Link>
 
                 <div className="border-t border-[#e1e3e5] my-1" />
 
