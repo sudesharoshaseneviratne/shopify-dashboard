@@ -3,13 +3,18 @@
 import { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
 import { getAdminCollectionsAction } from "@/app/actions/collections";
+import { isShowcaseCollection } from "@/lib/store/collections";
 
 const fallbackCollections = [
-  "Cold Storage",
-  "Mining & ASICs",
-  "Sovereign Nodes",
-  "Security & Backup",
-  "Cryptographic Relics"
+  "Featured Products",
+  "Best Sellers",
+  "New Arrivals",
+  "All Products",
+  "Books & Workbooks",
+  "Tech & Electronics",
+  "Stationery & Office",
+  "School Essentials",
+  "Novelties & Gifts"
 ];
 
 interface CollectionModalProps {
@@ -127,7 +132,14 @@ export function CollectionModal({
                     onChange={() => toggleCollection(colName)}
                     className="rounded-[4px] border-[#c9cccf] cursor-pointer"
                   />
-                  <span>{colName}</span>
+                  <div className="flex items-center justify-between flex-1 min-w-0 pr-2">
+                    <span className="truncate">{colName}</span>
+                    {isShowcaseCollection(colName) && (
+                      <span className="shrink-0 text-[10.5px] font-medium bg-amber-50 text-amber-900 border border-amber-300/80 rounded px-1.5 py-0.5 ml-2">
+                        Homepage Section
+                      </span>
+                    )}
+                  </div>
                 </label>
               );
             })

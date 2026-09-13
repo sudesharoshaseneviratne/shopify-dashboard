@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 
 export function GeneralSettings() {
-  const [storeName, setStoreName] = useState("Learnix LK");
-  const [storeEmail, setStoreEmail] = useState("learnixlk@gmail.com");
+  const [storeName, setStoreName] = useState("Prasanthi Craft");
+  const [storeEmail, setStoreEmail] = useState("prasanthicrafts@gmail.com");
   const [storePhone, setStorePhone] = useState("+94774230976");
   const [storeAddress, setStoreAddress] = useState(
     "135/79 Neelammahara Road, Maharagama, 10290, Sri Lanka"
@@ -132,7 +132,7 @@ export function GeneralSettings() {
           </div>
           <div className="flex items-center gap-2">
             <span className="bg-[#f1f2f4] text-[#303030] text-[12px] font-medium px-2.5 py-1 rounded-md border border-[#e1e3e5]">
-              Sri Lankan Rupee (LKR Rs)
+              Sri Lankan Rupee (LKR)
             </span>
             <button className="text-[#616161] hover:text-[#1a1a1a] p-1.5 rounded-md hover:bg-[#e4e5e7] transition">
               <MoreHorizontal className="w-4 h-4" />

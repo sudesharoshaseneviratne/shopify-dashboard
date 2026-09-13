@@ -218,9 +218,9 @@ export async function createCollectionAction(input: CreateCollectionInput) {
 
     safeRevalidate("/admin/products/collections");
     safeRevalidate("/admin/products");
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true, id };
   } catch (error) {
@@ -272,9 +272,9 @@ export async function updateCollectionAction(id: string, input: UpdateCollection
     safeRevalidate("/admin/products/collections");
     safeRevalidate(`/admin/products/collections/${id}`);
     safeRevalidate("/admin/products");
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true };
   } catch (error) {
@@ -293,9 +293,9 @@ export async function deleteCollectionAction(id: string) {
       .where(or(eq(collections.id, id), eq(collections.slug, id)));
 
     safeRevalidate("/admin/products/collections");
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true };
   } catch (error) {
@@ -312,9 +312,9 @@ export async function bulkDeleteCollectionsAction(ids: string[]) {
     await db.delete(collections).where(inArray(collections.id, ids));
 
     safeRevalidate("/admin/products/collections");
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true };
   } catch (error) {
@@ -335,9 +335,9 @@ export async function addProductToCollectionAction(productId: string, collection
 
     safeRevalidate("/admin/products/collections");
     safeRevalidate(`/admin/products/collections/${collectionId}`);
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true };
   } catch (error) {
@@ -362,9 +362,9 @@ export async function removeProductFromCollectionAction(productId: string, colle
 
     safeRevalidate("/admin/products/collections");
     safeRevalidate(`/admin/products/collections/${collectionId}`);
-    safeRevalidate("/store", "layout");
-    safeRevalidate("/store");
-    safeRevalidate("/store/products");
+    safeRevalidate("/", "layout");
+    safeRevalidate("/");
+    safeRevalidate("/products");
 
     return { success: true };
   } catch (error) {

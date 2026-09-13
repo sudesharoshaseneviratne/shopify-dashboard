@@ -15,7 +15,7 @@ import { OrderDraftIcon } from "@shopify/polaris-icons";
 const mockDraftDetails: Record<string, any> = {
   "D2": {
     id: "#D2",
-    updatedInfo: "Updated by Learnix LK July 27, 7:54 pm",
+    updatedInfo: "Updated by Prasanthi Craft July 27, 7:54 pm",
     completedDate: "Jul 27, 2026, 7:54 PM",
     isCompleted: true,
     product: {
@@ -49,7 +49,7 @@ const mockDraftDetails: Record<string, any> = {
   },
   "D3": {
     id: "#D3",
-    updatedInfo: "Updated by Learnix LK Wednesday at 1:46 pm",
+    updatedInfo: "Updated by Prasanthi Craft Wednesday at 1:46 pm",
     completedDate: "Wednesday at 1:46 PM",
     isCompleted: true,
     product: {
@@ -89,7 +89,7 @@ export default function DraftDetailsPage({ params }: { params: Promise<{ id: str
   
   const draft = mockDraftDetails[draftIdClean] || {
     id: `#${draftIdClean}`,
-    updatedInfo: "Updated by Learnix LK July 27, 7:54 pm",
+    updatedInfo: "Updated by Prasanthi Craft July 27, 7:54 pm",
     completedDate: "Jul 27, 2026, 7:54 PM",
     isCompleted: true,
     product: {

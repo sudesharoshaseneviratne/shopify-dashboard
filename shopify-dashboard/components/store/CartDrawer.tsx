@@ -9,7 +9,8 @@ import {
   Plus, 
   Minus, 
   Zap, 
-  ShieldCheck 
+  ShieldCheck,
+  ArrowRight
 } from "lucide-react";
 import { useCart } from "@/lib/store/cartContext";
 
@@ -37,9 +38,9 @@ export function CartDrawer() {
     if (!inputCode) return;
     const ok = await applyDiscount(inputCode);
     if (ok) {
-      setCodeMsg({ text: "21% Satoshi Halving Discount Applied!", ok: true });
+      setCodeMsg({ text: "10% Welcome Discount Applied!", ok: true });
     } else {
-      setCodeMsg({ text: "Invalid voucher (try 'SATOSHI21')", ok: false });
+      setCodeMsg({ text: "Invalid voucher (try 'WELCOME10')", ok: false });
     }
   };
 
@@ -63,8 +64,8 @@ export function CartDrawer() {
                 <ShoppingBag className="w-4 h-4 text-amber-700" />
               </div>
               <div>
-                <h2 className="font-heading font-bold text-lg text-slate-900">Vault Cart</h2>
-                <p className="text-[11px] font-mono text-slate-500 font-medium">{items.length} unique assets in manifest</p>
+                <h2 className="font-heading font-bold text-lg text-slate-900">Shopping Cart</h2>
+                <p className="text-[11px] font-mono text-slate-500 font-medium">{items.length} items in your bag</p>
               </div>
             </div>
 
@@ -76,12 +77,12 @@ export function CartDrawer() {
             </button>
           </div>
 
-          {/* Insured Air-Gap Transport Progress Bar */}
+          {/* Islandwide Delivery Progress Bar */}
           <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
             <div className="flex items-center justify-between text-xs font-mono mb-1.5 font-medium">
-              <span className="text-slate-600">Air-Gapped Insured Courier:</span>
+              <span className="text-slate-600">Free Islandwide Delivery:</span>
               <span className="text-amber-700 font-bold">
-                {totalUsd >= freeShippingThreshold ? "UNLOCKED FREE" : `$${Math.max(0, freeShippingThreshold - totalUsd)} to FREE`}
+                {totalUsd >= freeShippingThreshold ? "UNLOCKED FREE" : `${formatPrice(Math.max(0, freeShippingThreshold - totalUsd))} to Free Delivery`}
               </span>
             </div>
             <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -99,9 +100,9 @@ export function CartDrawer() {
                 <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
-                <h3 className="font-heading font-bold text-slate-900 text-base">Your vault manifest is empty</h3>
+                <h3 className="font-heading font-bold text-slate-900 text-base">Your cart is empty</h3>
                 <p className="text-xs text-slate-500 max-w-xs">
-                  Equip yourself with cryptographic cold keys, liquid mining hardware, or sovereign nodes.
+                  Discover our curated educational books, workbooks, fine stationery, and smart tech.
                 </p>
               </div>
             ) : (
@@ -176,7 +177,7 @@ export function CartDrawer() {
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    placeholder="Voucher (e.g. SATOSHI21)"
+                    placeholder="Voucher (e.g. WELCOME10)"
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}
                     className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 uppercase placeholder:normal-case placeholder:text-slate-400 outline-none shadow-xs"
@@ -200,18 +201,15 @@ export function CartDrawer() {
               <div className="space-y-1.5 pt-2 border-t border-slate-200 text-xs font-mono font-medium">
                 {discountPercent > 0 && (
                   <div className="flex justify-between text-emerald-700">
-                    <span>Halving Discount (-21%):</span>
-                    <span>- {formatPrice((totalUsd / (1 - 0.21)) * 0.21)}</span>
+                    <span>Discount applied:</span>
+                    <span>-{discountPercent}%</span>
                   </div>
                 )}
                 <div className="flex justify-between items-baseline pt-1">
-                  <span className="font-heading font-semibold text-sm text-slate-900">Settlement Total:</span>
+                  <span className="font-heading font-semibold text-sm text-slate-900">Total Amount:</span>
                   <div className="text-right">
                     <div className="font-mono text-xl font-bold text-slate-900">
                       {formatPrice(totalUsd)}
-                    </div>
-                    <div className="text-[10px] text-amber-700 font-bold">
-                      ≈ {totalSats.toLocaleString()} Sats • ₿ {(totalUsd / 95240).toFixed(6)}
                     </div>
                   </div>
                 </div>
@@ -220,26 +218,26 @@ export function CartDrawer() {
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <Link
-                  href="/store/cart"
+                  href="/cart"
                   onClick={() => setIsCartOpen(false)}
                   className="w-full py-3 rounded-full border border-slate-300 hover:border-slate-800 bg-white text-center text-xs font-heading font-bold uppercase tracking-wider text-slate-800 transition shadow-xs"
                 >
-                  View Details
+                  View Cart
                 </Link>
 
                 <Link
-                  href="/store/checkout"
+                  href="/checkout"
                   onClick={() => setIsCartOpen(false)}
                   className="w-full py-3 rounded-full bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 hover:scale-105 shadow-md shadow-amber-500/20 text-center text-xs font-heading font-bold uppercase tracking-wider text-slate-950 flex items-center justify-center gap-1.5 transition-all"
                 >
-                  <Zap className="w-3.5 h-3.5 text-slate-950" />
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
                   <span>Checkout</span>
                 </Link>
               </div>
 
               <div className="flex items-center justify-center gap-2 text-[10px] font-mono text-slate-500 pt-1 font-medium">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-                <span>Zero-Knowledge Proof & Lightning Settlement</span>
+                <span>100% Secure Checkout &amp; Islandwide Delivery</span>
               </div>
             </div>
           )}

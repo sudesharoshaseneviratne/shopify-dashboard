@@ -56,7 +56,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const [comments, setComments] = useState<
     Array<{ id: string; author: string; text: string; time: string }>
   >([
-    { id: "1", author: "Learnix LK", text: "Order confirmed and verified with customer.", time: "Today at 2:15 pm" },
+    { id: "1", author: "Prasanthi Craft", text: "Order confirmed and verified with customer.", time: "Today at 2:15 pm" },
   ]);
   const [newCommentText, setNewCommentText] = useState("");
 

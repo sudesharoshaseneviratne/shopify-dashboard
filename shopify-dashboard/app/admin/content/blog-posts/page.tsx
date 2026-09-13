@@ -5,15 +5,15 @@ import { Badge } from "@/components/admin/Badge";
 import { useTableLogic } from "@/hooks/admin/useTableLogic";
 
 const initialPosts = [
-  { id: 1, title: "Cambridge vs Pearson | Which Curriculum is Right for Your Child? | Learnix.lk", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Wednesday at 9:26 am", pub: "Jul 29, 2026", color: "bg-blue-100 text-blue-500" },
-  { id: 2, title: "Cambridge Primary Books in Sri Lanka | Complete Parent's Guide | Learnix.lk", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Jul 24 at 8:19 am", pub: "Jul 24, 2026", color: "bg-green-100 text-green-500" },
-  { id: 3, title: "Pearson iPrimary Reception Books in Sri Lanka: A Complete Parent's Guide", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Jul 22 at 4:07 pm", pub: "Jul 22, 2026", color: "bg-orange-100 text-orange-500" },
-  { id: 4, title: "Our Big Exam Prep Sale is Here!", vis: "Hidden", author: "Learnix LK", blog: "News", updated: "Jul 22 at 4:00 pm", pub: "", color: "bg-gray-100 text-gray-500" },
-  { id: 5, title: "Choosing Your A-Level Subjects: A Guide to Balancing Passion and Career Goals", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Nov 14 at 12:17 pm", pub: "Nov 14, 2025", color: "bg-red-100 text-red-500" },
-  { id: 6, title: "5 Proven Study Techniques for Your Edexcel & Cambridge Exams", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Nov 14 at 12:16 pm", pub: "Nov 14, 2025", color: "bg-teal-100 text-teal-500" },
-  { id: 7, title: "Key Update", vis: "Visible", author: "Learnix LK", blog: "News", updated: "Nov 14 at 12:12 pm", pub: "Oct 30, 2025", color: "bg-indigo-100 text-indigo-500" },
-  { id: 8, title: "How to Use Past Papers Effectively", vis: "Visible", author: "Learnix LK", blog: "Blogs", updated: "Nov 14 at 12:12 pm", pub: "Nov 14, 2025", color: "bg-yellow-100 text-yellow-600" },
-  { id: 9, title: "New Arrivals", vis: "Visible", author: "Learnix LK", blog: "News", updated: "Nov 14 at 12:05 pm", pub: "Nov 7, 2025", color: "bg-pink-100 text-pink-500" },
+  { id: 1, title: "Cambridge vs Pearson | Which Curriculum is Right for Your Child? | PrasanthiCraft.com", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Wednesday at 9:26 am", pub: "Jul 29, 2026", color: "bg-blue-100 text-blue-500" },
+  { id: 2, title: "Cambridge Primary Books in Sri Lanka | Complete Parent's Guide | PrasanthiCraft.com", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Jul 24 at 8:19 am", pub: "Jul 24, 2026", color: "bg-green-100 text-green-500" },
+  { id: 3, title: "Pearson iPrimary Reception Books in Sri Lanka: A Complete Parent's Guide", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Jul 22 at 4:07 pm", pub: "Jul 22, 2026", color: "bg-orange-100 text-orange-500" },
+  { id: 4, title: "Our Big Exam Prep Sale is Here!", vis: "Hidden", author: "Prasanthi Craft", blog: "News", updated: "Jul 22 at 4:00 pm", pub: "", color: "bg-gray-100 text-gray-500" },
+  { id: 5, title: "Choosing Your A-Level Subjects: A Guide to Balancing Passion and Career Goals", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Nov 14 at 12:17 pm", pub: "Nov 14, 2025", color: "bg-red-100 text-red-500" },
+  { id: 6, title: "5 Proven Study Techniques for Your Edexcel & Cambridge Exams", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Nov 14 at 12:16 pm", pub: "Nov 14, 2025", color: "bg-teal-100 text-teal-500" },
+  { id: 7, title: "Key Update", vis: "Visible", author: "Prasanthi Craft", blog: "News", updated: "Nov 14 at 12:12 pm", pub: "Oct 30, 2025", color: "bg-indigo-100 text-indigo-500" },
+  { id: 8, title: "How to Use Past Papers Effectively", vis: "Visible", author: "Prasanthi Craft", blog: "Blogs", updated: "Nov 14 at 12:12 pm", pub: "Nov 14, 2025", color: "bg-yellow-100 text-yellow-600" },
+  { id: 9, title: "New Arrivals", vis: "Visible", author: "Prasanthi Craft", blog: "News", updated: "Nov 14 at 12:05 pm", pub: "Nov 7, 2025", color: "bg-pink-100 text-pink-500" },
 ];
 
 export default function BlogPosts() {

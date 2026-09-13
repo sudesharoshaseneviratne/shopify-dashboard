@@ -14,7 +14,8 @@ import {
   Plus, 
   Zap, 
   ArrowRight,
-  Sparkles
+  Sparkles,
+  ShoppingBag
 } from "lucide-react";
 import { useCart } from "@/lib/store/cartContext";
 
@@ -130,9 +131,10 @@ export function QuickViewModal() {
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-[10px] font-mono uppercase text-slate-500 font-semibold">Satoshi Equivalent</span>
-                <div className="font-mono text-sm font-bold text-amber-700">
-                  {product.priceSats.toLocaleString()} Sats
+                <span className="text-[10px] font-mono uppercase text-slate-500 font-semibold">Availability</span>
+                <div className="font-mono text-xs font-bold text-emerald-700 flex items-center gap-1 justify-end">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  <span>In Stock</span>
                 </div>
               </div>
             </div>
@@ -178,12 +180,12 @@ export function QuickViewModal() {
                 {added ? (
                   <>
                     <Check className="w-4 h-4 text-white" />
-                    <span className="text-white">Added to Vault</span>
+                    <span className="text-white">Added to Cart</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 text-slate-950" />
-                    <span>Secure Asset</span>
+                    <ShoppingBag className="w-4 h-4 text-slate-950" />
+                    <span>Add to Cart</span>
                   </>
                 )}
               </button>
@@ -191,11 +193,11 @@ export function QuickViewModal() {
 
             <div className="text-center pt-1">
               <Link
-                href={`/store/products/${product.id}`}
+                href={`/products/${product.id}`}
                 onClick={() => setQuickViewProduct(null)}
                 className="text-xs font-mono text-amber-700 font-bold hover:underline inline-flex items-center gap-1"
               >
-                <span>View Full Cryptographic Datasheet</span>
+                <span>View Full Product Specifications</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>

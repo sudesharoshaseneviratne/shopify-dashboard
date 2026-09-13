@@ -9,9 +9,11 @@ import {
   RotateCcw, 
   Sparkles,
   Grid3X3,
-  LayoutGrid
+  LayoutGrid,
+  X
 } from "lucide-react";
 import { type StoreProduct, type StoreCollection } from "@/lib/store/products";
+import { isShowcaseCollection } from "@/lib/store/collections";
 import { ProductCard } from "@/components/store/ProductCard";
 
 type SortOption = "featured" | "price-asc" | "price-desc" | "rating" | "reviews";
@@ -28,12 +30,11 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
   const searchParam = searchParams.get("q");
 
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    categoryParam || "All Protocol Gear"
+    categoryParam || "All Products"
   );
   const [searchQuery, setSearchQuery] = useState(searchParam || "");
   const [priceRange, setPriceRange] = useState<PriceRange>("all");
   const [inStockOnly, setInStockOnly] = useState(false);
-  const [securityFilter, setSecurityFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortOption>("featured");
   const [gridCols, setGridCols] = useState<3 | 4>(4);
 
@@ -41,54 +42,78 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
   useEffect(() => {
     if (categoryParam) {
       setSelectedCategory(categoryParam);
+    } else if (searchParam) {
+      // If user came with search query and no explicit category in URL, default to All Products
+      setSelectedCategory("All Products");
     }
-  }, [categoryParam]);
+  }, [categoryParam, searchParam]);
 
   useEffect(() => {
-    if (searchParam) {
+    if (searchParam !== null && searchParam !== undefined) {
       setSearchQuery(searchParam);
+      if (searchParam.trim() && !categoryParam) {
+        setSelectedCategory("All Products");
+      }
     }
-  }, [searchParam]);
+  }, [searchParam, categoryParam]);
 
   const categoriesList = useMemo(() => {
-    const dynamicCats = collections && collections.length > 0
-      ? collections.map((c) => c.title)
-      : ["Cold Storage", "Mining & ASICs", "Sovereign Nodes", "Cryptographic Relics", "Security & Backup"];
+    // Distinct titles from collections in DB
+    const colTitles = (collections || [])
+      .map((c) => c.title?.trim())
+      .filter((c): c is string => Boolean(c) && !isShowcaseCollection(c));
 
-    return ["All Protocol Gear", ...dynamicCats];
-  }, [collections]);
+    // Also extract all distinct categories present in live database products
+    const productCategories = (initialProducts || [])
+      .map((p) => p.category?.trim())
+      .filter((c): c is string => Boolean(c) && !isShowcaseCollection(c));
+
+    const unique = Array.from(new Set([...colTitles, ...productCategories]));
+    return ["All Products", ...unique];
+  }, [collections, initialProducts]);
 
   // Filter & Sort Products from live database
   const filteredAndSortedProducts = useMemo(() => {
+    const q = (searchQuery || "").trim().toLowerCase();
+    const normalized = q.replace(/[-_/\\+]/g, " ");
+    const terms = normalized.split(/\s+/).filter(Boolean);
+
     return initialProducts.filter((product) => {
       // Category filter
+      const productCat = (product.category || "").toLowerCase();
       const matchesCategory =
-        selectedCategory === "All Protocol Gear" ||
-        (product.category && product.category.toLowerCase() === selectedCategory.toLowerCase());
+        selectedCategory === "All Products" ||
+        productCat === selectedCategory.toLowerCase();
 
-      // Search filter
-      const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      // Search filter with smart multi-token matching across name, category, tagline, description, and specs (SKU, barcode, vendor)
+      let matchesSearch = true;
+      if (terms.length > 0) {
+        const name = (product.name || "").toLowerCase();
+        const tagline = (product.tagline || "").toLowerCase();
+        const desc = (product.description || "").toLowerCase();
+        const specsText = (product.specs || []).map((s) => `${s.label} ${s.value}`).join(" ").toLowerCase();
+        const badge = (product.badge || "").toLowerCase();
+
+        matchesSearch = terms.every((term) =>
+          name.includes(term) ||
+          tagline.includes(term) ||
+          productCat.includes(term) ||
+          desc.includes(term) ||
+          specsText.includes(term) ||
+          badge.includes(term)
+        );
+      }
 
       // Price filter
       let matchesPrice = true;
-      if (priceRange === "under-300") matchesPrice = product.priceUsd < 300;
-      else if (priceRange === "300-1000") matchesPrice = product.priceUsd >= 300 && product.priceUsd <= 1000;
-      else if (priceRange === "over-1000") matchesPrice = product.priceUsd > 1000;
+      if (priceRange === "under-300") matchesPrice = product.priceUsd < 1000;
+      else if (priceRange === "300-1000") matchesPrice = product.priceUsd >= 1000 && product.priceUsd <= 3000;
+      else if (priceRange === "over-1000") matchesPrice = product.priceUsd > 3000;
 
       // In-stock filter
       const matchesStock = !inStockOnly || product.inventory > 0;
 
-      // Security rating filter
-      const matchesSecurity =
-        securityFilter === "all" ||
-        product.securityRating === securityFilter ||
-        (product.badge && product.badge.includes(securityFilter));
-
-      return matchesCategory && matchesSearch && matchesPrice && matchesStock && matchesSecurity;
+      return matchesCategory && matchesSearch && matchesPrice && matchesStock;
     }).sort((a, b) => {
       if (sortBy === "price-asc") return a.priceUsd - b.priceUsd;
       if (sortBy === "price-desc") return b.priceUsd - a.priceUsd;
@@ -96,21 +121,19 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
       return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
     });
-  }, [initialProducts, selectedCategory, searchQuery, priceRange, inStockOnly, securityFilter, sortBy]);
+  }, [initialProducts, selectedCategory, searchQuery, priceRange, inStockOnly, sortBy]);
 
   const hasActiveFilters =
-    selectedCategory !== "All Protocol Gear" ||
+    selectedCategory !== "All Products" ||
     searchQuery !== "" ||
     priceRange !== "all" ||
-    inStockOnly ||
-    securityFilter !== "all";
+    inStockOnly;
 
   const resetFilters = () => {
-    setSelectedCategory("All Protocol Gear");
+    setSelectedCategory("All Products");
     setSearchQuery("");
     setPriceRange("all");
     setInStockOnly(false);
-    setSecurityFilter("all");
     setSortBy("featured");
   };
 
@@ -118,11 +141,11 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-2 text-xs font-mono text-slate-500">
-        <Link href="/store" className="hover:text-slate-900 transition">
-          Vault Mainnet
+        <Link href="/" className="hover:text-slate-900 transition">
+          Home
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-        <span className="text-amber-700 font-bold">Complete Hardware Catalog</span>
+        <span className="text-amber-700 font-bold">Store Catalog</span>
       </nav>
 
       {/* Catalog Header */}
@@ -130,13 +153,13 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-mono text-amber-800 font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>FULL SOVEREIGN INVENTORY</span>
+            <span>CURATED STORE CATALOG</span>
           </div>
           <h1 className="font-heading font-black text-3xl sm:text-5xl text-slate-900">
-            Protocol Hardware <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Catalog</span>
+            Store <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Catalog</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-body max-w-2xl leading-relaxed">
-            Browse mathematical cold storage keys, ultra-silent residential hydro miners, dedicated sovereign nodes, and indestructible seed vaults.
+            Browse creative craft items, die cuts, cake toppers, pipe cleaners, and DIY supplies.
           </p>
         </div>
 
@@ -145,11 +168,26 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search chips, signers, nodes..."
+            placeholder="Search craft items, toppers, die cuts..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-full pl-10 pr-4 py-2.5 text-xs font-mono text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs"
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (val.trim() && selectedCategory !== "All Products") {
+                setSelectedCategory("All Products");
+              }
+            }}
+            className="w-full bg-white border border-slate-300 focus:border-amber-500 rounded-full pl-10 pr-9 py-2.5 text-xs font-mono text-slate-900 placeholder:text-slate-400 outline-none transition shadow-xs"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -157,9 +195,9 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
       <div className="space-y-4">
         {/* Category Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {categoriesList.map((cat) => (
+          {categoriesList.map((cat, idx) => (
             <button
-              key={cat}
+              key={`${cat}-${idx}`}
               onClick={() => setSelectedCategory(cat)}
               className={`px-4 py-2 rounded-full text-xs font-mono whitespace-nowrap transition cursor-pointer ${
                 selectedCategory.toLowerCase() === cat.toLowerCase()
@@ -184,25 +222,9 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
                 className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 outline-none focus:border-amber-500 cursor-pointer"
               >
                 <option value="all">All Prices</option>
-                <option value="under-300">Under $300</option>
-                <option value="300-1000">$300 - $1,000</option>
-                <option value="over-1000">Over $1,000</option>
-              </select>
-            </div>
-
-            {/* Security Standard Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-500 font-semibold">Security:</span>
-              <select
-                value={securityFilter}
-                onChange={(e) => setSecurityFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-800 outline-none focus:border-amber-500 cursor-pointer"
-              >
-                <option value="all">All Standards</option>
-                <option value="CC EAL6+ Certified">EAL6+ Certified</option>
-                <option value="Hardware Secure Boot">Secure Boot</option>
-                <option value="FIPS 140-3 Level 4">FIPS 140-3</option>
-                <option value="BIP-174 Air-Gapped">BIP-174 Air-Gap</option>
+                <option value="under-300">Under LKR 1,000</option>
+                <option value="300-1000">LKR 1,000 - LKR 3,000</option>
+                <option value="over-1000">Over LKR 3,000</option>
               </select>
             </div>
 
@@ -270,11 +292,20 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
       {/* Results Header Count */}
       <div className="flex items-center justify-between text-xs font-mono text-slate-500 font-medium">
         <div>
-          Showing <strong className="text-slate-900">{filteredAndSortedProducts.length}</strong> sovereign hardware artifacts
+          Showing <strong className="text-slate-900">{filteredAndSortedProducts.length}</strong> products
         </div>
         {searchQuery && (
-          <div>
-            Filtered by query: "<span className="text-amber-700 font-bold">{searchQuery}</span>"
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-semibold">
+              Query: &quot;{searchQuery}&quot;
+              <button
+                onClick={() => setSearchQuery("")}
+                className="p-0.5 rounded-full hover:bg-amber-200/60 text-amber-700 transition cursor-pointer"
+                title="Remove query"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
           </div>
         )}
       </div>
@@ -296,9 +327,9 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
           <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
             <Search className="w-8 h-8" />
           </div>
-          <h3 className="font-heading font-bold text-xl text-slate-900">No Sovereign Hardware Found</h3>
+          <h3 className="font-heading font-bold text-xl text-slate-900">No Products Found</h3>
           <p className="text-xs font-mono text-slate-500 max-w-md mx-auto">
-            No hardware artifacts match your active filter criteria. Try adjusting your search query, price range, or category.
+            No products match your active filter criteria. Try adjusting your search query, price range, or category.
           </p>
           <button
             onClick={resetFilters}

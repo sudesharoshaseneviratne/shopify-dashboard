@@ -9,7 +9,8 @@ import {
   Award, 
   Layers 
 } from "lucide-react";
-import type { StoreProduct, StoreCollection } from "@/lib/store/products";
+import { StoreCollection, StoreProduct } from "@/lib/store/products";
+import { isShowcaseCollection } from "@/lib/store/collections";
 import { ProductCarousel } from "@/components/store/ProductCarousel";
 import { ProductCard } from "@/components/store/ProductCard";
 import { HomeBannerSlider } from "@/components/store/HomeBannerSlider";
@@ -23,31 +24,64 @@ interface StoreHomeClientProps {
 }
 
 export function StoreHomeClient({ products, collections }: StoreHomeClientProps) {
-  // Curated collections for the carousels: dynamic from Supabase
-  const featuredProducts = products.filter((p) => p.featured);
-  // New arrivals: latest products added appear first
-  const newArrivalProducts = products.length > 0 ? products : [];
-  const bestSellerProducts = [...products]
-    .sort((a, b) => b.reviewsCount - a.reviewsCount);
+  // Helper to check if a product is linked to a collection by ID, slug, or title
+  const isProductInCollection = (p: StoreProduct, keywords: string[]) => {
+    if (!p.collections || p.collections.length === 0) return false;
+    const lowerCols = p.collections.map((c) => c.toLowerCase());
+    return keywords.some((k) => lowerCols.includes(k.toLowerCase()));
+  };
+
+  // 1. Featured Products section: Products assigned to "Featured Products" collection in dashboard (or marked featured)
+  const assignedFeatured = products.filter((p) =>
+    isProductInCollection(p, ["featured-products", "featured products", "featured"])
+  );
+  const featuredProducts = assignedFeatured.length > 0 ? assignedFeatured : products.filter((p) => p.featured);
+
+  // 2. New Arrivals section: Products assigned to "New Arrivals" collection in dashboard (or newest catalog items)
+  const assignedNewArrivals = products.filter((p) =>
+    isProductInCollection(p, ["new-arrivals", "new arrivals"])
+  );
+  const newArrivalProducts = assignedNewArrivals.length > 0 ? assignedNewArrivals : products;
+
+  // 3. Best Sellers section: Products assigned to "Best Sellers" collection in dashboard (or top reviews)
+  const assignedBestSellers = products.filter((p) =>
+    isProductInCollection(p, ["best-sellers", "best sellers", "bestsellers"])
+  );
+  const bestSellerProducts = assignedBestSellers.length > 0 
+    ? assignedBestSellers 
+    : [...products].sort((a, b) => b.reviewsCount - a.reviewsCount);
+
+  // 4. All Products section: Products assigned to "All Products" collection (or all active catalog items)
+  const assignedAllProducts = products.filter((p) =>
+    isProductInCollection(p, ["all-products", "all products"])
+  );
+  const baseAllProducts = assignedAllProducts.length > 0 ? assignedAllProducts : products;
+
+  // Filter out the 4 showcase collections so they NEVER appear in the category tabs!
+  const productCollections = (collections || []).filter((c) => !isShowcaseCollection(c));
 
   // Category filter for the "All Products" grid section
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const categoriesList = [
     "All", 
-    ...(collections && collections.length > 0
-      ? collections.map((c) => c.title)
+    ...(productCollections.length > 0
+      ? productCollections.map((c) => c.title)
       : [
-          "Cold Storage", 
-          "Mining & ASICs", 
-          "Sovereign Nodes", 
-          "Security & Backup", 
-          "Cryptographic Relics"
+          "Books & Workbooks", 
+          "Tech & Electronics", 
+          "Stationery & Office", 
+          "School Essentials", 
+          "Novelties & Gifts"
         ])
   ];
 
   const filteredAllProducts = selectedCategory === "All" 
-    ? products 
-    : products.filter((p) => (p.category && p.category.toLowerCase() === selectedCategory.toLowerCase()));
+    ? baseAllProducts 
+    : baseAllProducts.filter((p) => (p.category && p.category.toLowerCase() === selectedCategory.toLowerCase()));
+
+  // Limit home page grid to 2 rows (4 columns = 8 products)
+  const HOME_PRODUCTS_LIMIT = 8;
+  const displayedProducts = filteredAllProducts.slice(0, HOME_PRODUCTS_LIMIT);
 
   return (
     <div className="space-y-12 sm:space-y-16 pb-20">
@@ -63,14 +97,14 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-700 font-bold tracking-wider uppercase">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>HANDPICKED SOVEREIGN SUITE</span>
+              <span>CURATED STORE SELECTIONS</span>
             </div>
             <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
               Featured <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Products</span>
             </h2>
           </div>
           <Link 
-            href="/store/products"
+            href="/products"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-amber-50 text-slate-950 border-2 border-black font-heading font-bold text-xs shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#FFB800] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
           >
             <span>View All Featured</span>
@@ -88,14 +122,14 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-700 font-bold tracking-wider uppercase">
               <PackageCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>LATEST PROTOCOL ADDITIONS</span>
+              <span>NEW TERM ARRIVALS</span>
             </div>
             <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
               New <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Arrivals</span>
             </h2>
           </div>
           <Link 
-            href="/store/products"
+            href="/products"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-amber-50 text-slate-950 border-2 border-black font-heading font-bold text-xs shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#FFB800] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
           >
             <span>Explore Releases</span>
@@ -113,14 +147,14 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-800 font-bold tracking-wider uppercase">
               <Award className="w-3.5 h-3.5 text-amber-500" />
-              <span>HIGHEST VOLUME PROVEN GEAR</span>
+              <span>TOP RATED CUSTOMER FAVORITES</span>
             </div>
             <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
               Best <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Sellers</span>
             </h2>
           </div>
           <Link 
-            href="/store/products"
+            href="/products"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-amber-50 text-slate-950 border-2 border-black font-heading font-bold text-xs shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#FFB800] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
           >
             <span>View Top Rated</span>
@@ -138,7 +172,7 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-mono text-amber-700 font-bold tracking-wider uppercase">
               <Layers className="w-3.5 h-3.5 text-amber-600" />
-              <span>COMPLETE HARDWARE INVENTORY</span>
+              <span>EXPLORE FULL PRODUCT CATALOG</span>
             </div>
             <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
               All <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Products</span>
@@ -163,10 +197,10 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
           </div>
         </div>
 
-        {/* 4-Column Product Grid */}
-        {filteredAllProducts.length > 0 ? (
+        {/* 4-Column Product Grid (limited to 2 rows on desktop) */}
+        {displayedProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredAllProducts.map((product) => (
+            {displayedProducts.map((product) => (
               <ProductCard key={`all-${product.id}`} product={product} />
             ))}
           </div>
@@ -177,9 +211,14 @@ export function StoreHomeClient({ products, collections }: StoreHomeClientProps)
         )}
 
         {/* Bottom Callout */}
-        <div className="text-center pt-4">
+        <div className="text-center pt-4 space-y-2">
+          {filteredAllProducts.length > HOME_PRODUCTS_LIMIT && (
+            <p className="text-xs font-mono text-slate-500">
+              Showing {displayedProducts.length} of {filteredAllProducts.length} products
+            </p>
+          )}
           <Link
-            href="/store/products"
+            href="/products"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-black hover:bg-slate-900 text-white font-heading font-bold text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_0px_#FFB800] hover:shadow-[6px_6px_0px_0px_#FFB800] hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer"
           >
             <span>Explore Complete Store Catalog ({products.length} Items)</span>

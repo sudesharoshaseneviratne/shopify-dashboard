@@ -18,7 +18,7 @@ export interface StoreProduct {
   id: string;
   name: string;
   tagline: string;
-  category: "Cold Storage" | "Mining & ASICs" | "Sovereign Nodes" | "Cryptographic Relics" | "Security & Backup" | string;
+  category: "Books & Workbooks" | "Tech & Electronics" | "Stationery & Office" | "School Essentials" | "Novelties & Gifts" | string;
   priceUsd: number;
   priceSats: number;
   rating: number;
@@ -40,294 +40,292 @@ export interface StoreProduct {
   collections?: string[];
 }
 
-export const BTC_USD_RATE = 95240; // 1 BTC = $95,240 USD (1 Sat ≈ $0.0009524)
+export const USD_LKR_RATE = 320; // 1 USD ≈ 320 LKR reference rate
+export const BTC_USD_RATE = USD_LKR_RATE; // Backwards-compatible alias
 
 export const STORE_PRODUCTS: StoreProduct[] = [
   {
-    id: "coldkey-prime-mk4",
-    name: "Satoshi ColdKey Prime MK-IV",
-    tagline: "Air-gapped optical verification hardware signer with CC EAL6+ secure element",
-    category: "Cold Storage",
-    priceUsd: 289,
-    priceSats: 303443,
+    id: "oxford-advanced-learners-dictionary",
+    name: "Oxford Advanced Learner's Dictionary (10th Ed)",
+    tagline: "The definitive English vocabulary, pronunciation, and grammatical guide for students & professionals",
+    category: "Books & Workbooks",
+    priceUsd: 3420,
+    priceSats: 0,
     rating: 4.98,
     reviewsCount: 1420,
     inStock: true,
-    inventory: 48,
+    inventory: 85,
     featured: true,
-    badge: "BIP-174 Air-Gapped",
-    description: "The gold standard of sovereign Bitcoin custody. Features dual independent EAL6+ secure element chips, zero RF/Bluetooth emission, camera-based QR animated PSBT signing, and a high-contrast OLED display with physical dual-switch anti-tamper triggers.",
+    badge: "Official Oxford Edition",
+    description: "Build vocabulary and improve fluency with over 182,000 words, phrases, and definitions. Includes the Oxford 3000 and 5000 core word lists, CEFR level alignments, full-color illustrative plates, and interactive online resource access.",
     features: [
-      "100% Air-Gapped: Optical camera QR-code data transfer only",
-      "Dual CC EAL6+ Cryptographic Co-processors",
-      "Multisig & Miniscript Native Engine",
-      "Anti-Klepto signature nonce protection",
-      "Self-destruct duress PIN with zeroized RAM"
+      "Over 182,000 words, phrases, and meanings clearly defined",
+      "Oxford 3000 and 5000 keywords graded by CEFR proficiency",
+      "Visual vocabulary builder with 96 full-color reference plates",
+      "Comprehensive grammatical patterns and collocations",
+      "Hardcover binding with protective matte finish"
     ],
     specs: [
-      { label: "Secure Element", value: "Dual Microchip ATECC608B + ST33" },
-      { label: "Display", value: "2.8\" High-Contrast IPS Cryptographic Matrix" },
-      { label: "Connectivity", value: "Optical CMOS Camera + MicroSD (No Wireless)" },
-      { label: "Battery", value: "1200mAh Lithium Iron Phosphate (LiFePO4)" },
-      { label: "Enclosure", value: "Anodized Aerospace Titanium 6Al-4V" },
-      { label: "Entropy Generation", value: "True Hardware Avalanche Noise RNG" }
+      { label: "Publisher", value: "Oxford University Press" },
+      { label: "Edition", value: "10th Revised Global Edition" },
+      { label: "Pages", value: "1,856 Pages (Thumb Indexed)" },
+      { label: "Language", value: "International English (UK & US)" },
+      { label: "Binding", value: "Deluxe Hardbound with Ribbon" },
+      { label: "ISBN", value: "978-0194798488" }
     ],
-    firmwareVersion: "v4.18.2-sovereign",
-    securityRating: "CC EAL6+ Certified",
-    leadTime: "Immediate Dispatch (Same Block)",
+    firmwareVersion: "10th Edition",
+    securityRating: "Authentic Quality A+",
+    leadTime: "Immediate Dispatch (24h Delivery)",
     colorAccent: "#FFB800"
   },
   {
-    id: "orion-hydro-miner-140",
-    name: "Orion Hydro-ASIC 140 TH/s",
-    tagline: "Ultra-silent closed-loop liquid cooled SHA-256 home mining rig",
-    category: "Mining & ASICs",
-    priceUsd: 3450,
-    priceSats: 3622427,
+    id: "building-blocks-year-3-grammar",
+    name: "Building Blocks Year 3 Spelling & Grammar",
+    tagline: "Comprehensive curriculum workbook designed for foundational English language mastery",
+    category: "Books & Workbooks",
+    priceUsd: 1450,
+    priceSats: 0,
     rating: 4.95,
     reviewsCount: 382,
     inStock: true,
-    inventory: 14,
+    inventory: 64,
     featured: true,
-    badge: "Liquid Cooled 21 J/TH",
-    description: "Engineered specifically for residential and boutique sovereign hashing. Operates under 38dB noise level with custom micro-channel cold plates, delivering 140 Terahashes per second with unmatched thermodynamic efficiency.",
+    badge: "Curriculum Aligned",
+    description: "A structured, progressive workbook designed to develop spelling accuracy, punctuation mastery, and creative sentence construction for primary school students. Includes progressive self-assessment drills and color illustrations.",
     features: [
-      "Whisper-Quiet Operation: Under 38 dBA at full continuous hash",
-      "21.5 J/TH Industry-Leading Energy Efficiency",
-      "Direct Stratum V2 Protocol with Job Negotiation",
-      "Integrated Waste-Heat Radiator for Home Warming",
-      "Custom Linux OS with Telemetry Dashboard & Grafana integration"
+      "Structured 36-week progressive spelling and phonics program",
+      "Clear, engaging grammar practice with practical examples",
+      "Comprehensive review checkpoints and answer keys included",
+      "Printed on high-opacity smudge-free eco-friendly paper",
+      "Endorsed by leading primary education curriculum boards"
     ],
     specs: [
-      { label: "Hashrate", value: "140 TH/s ±3% SHA-256" },
-      { label: "Power Draw", value: "3,010W @ 220V AC" },
-      { label: "Coolant Loop", value: "Fluorochemical Non-Conductive Liquid" },
-      { label: "Acoustic Level", value: "37.5 dBA @ 1 meter" },
-      { label: "Weight", value: "14.2 kg (31.3 lbs)" },
-      { label: "Network Protocol", value: "Stratum V2 / V1 Dual Fallback" }
+      { label: "Target Grade", value: "Grade 3 / Year 3 (Ages 7-9)" },
+      { label: "Subject", value: "English Grammar, Phonics & Spelling" },
+      { label: "Format", value: "Activity Workbook (Perforated)" },
+      { label: "Pages", value: "164 Illustrated Pages" },
+      { label: "Printing", value: "Full Color Soy Ink" }
     ],
-    firmwareVersion: "v2.8.0-braiinsOS",
-    securityRating: "Hardware Secure Boot",
-    leadTime: "3 Business Days (Express Insured)",
+    firmwareVersion: "2026 Reprint",
+    securityRating: "Curriculum Certified",
+    leadTime: "In Stock (Same-Day Courier)",
     colorAccent: "#F59E0B"
   },
   {
-    id: "sovereign-node-x1",
-    name: "Sovereign ZK-Lightning Node X1",
-    tagline: "Zero-configuration dedicated Bitcoin Core + Lightning LND validation appliance",
-    category: "Sovereign Nodes",
-    priceUsd: 799,
-    priceSats: 838933,
+    id: "abacus-year-2-textbook",
+    name: "Abacus Year 2 Mathematics Master Textbook",
+    tagline: "Award-winning mathematics textbook fostering deep conceptual numeracy and problem-solving",
+    category: "Books & Workbooks",
+    priceUsd: 1850,
+    priceSats: 0,
     rating: 4.96,
     reviewsCount: 890,
     inStock: true,
-    inventory: 32,
+    inventory: 42,
     featured: true,
-    badge: "Plug & Validate",
-    description: "Run your own financial sovereignty center. Pre-synced with the complete Bitcoin blockchain history, running Electrum Server, BTCPay Server, Nostr relay, and automated Lightning channel rebalancing algorithms out of the box.",
+    badge: "Bestselling Numeracy",
+    description: "Renowned curriculum mathematics textbook empowering primary students to master arithmetic, mental math, geometry, and word problems through intuitive step-by-step visual models and progressive problem sets.",
     features: [
-      "Pre-indexed Full UTXO History & Mempool Visualizer",
-      "4TB High-Endurance NVMe Gen4 SSD Storage (10,000 TBW)",
-      "Zero-Config Tor v3 & I2P Onion Routing",
-      "Auto-Pilot Liquidity Routing for 1-5% APY Routing Fees",
-      "Hardware Killswitch & Encrypted Automated Offsite Backup"
+      "Intuitive concrete-pictorial-abstract visual modeling",
+      "Extensive real-world word problems and reasoning tasks",
+      "Mental math challenges and speed arithmetic warmups",
+      "Full coverage of national and international curriculum targets",
+      "Durable water-resistant laminated cover"
     ],
     specs: [
-      { label: "Processor", value: "AMD Ryzen Embedded 8-Core / 16-Thread" },
-      { label: "RAM", value: "32GB ECC DDR5 5600MHz" },
-      { label: "Storage", value: "4TB Samsung 990 PRO NVMe SSD" },
-      { label: "Networking", value: "Dual 2.5GbE LAN + Dedicated Hardware Firewall" },
-      { label: "Chassis", value: "Solid Billet CNC Aluminum Heatsink Enclosure" },
-      { label: "Power Consumption", value: "18W Idle / 45W Peak Validation" }
+      { label: "Series", value: "Abacus Mathematics Global" },
+      { label: "Grade Level", value: "Grade 2 / Primary 2" },
+      { label: "Subject", value: "Mathematics & Applied Numeracy" },
+      { label: "Pages", value: "192 Full Color Pages" },
+      { label: "Publisher", value: "Pearson Education" }
     ],
-    firmwareVersion: "Umbrel Sovereign v1.4",
-    securityRating: "Full Self-Host Isolation",
-    leadTime: "Immediate Dispatch",
-    colorAccent: "#FFD600"
+    firmwareVersion: "Revised Edition",
+    securityRating: "Authentic Textbook",
+    leadTime: "In Stock (Islandwide Delivery)",
+    colorAccent: "#FFB800"
   },
   {
-    id: "ciphersteel-24-matrix",
-    name: "CipherSteel 24-Seed Matrix Plate",
-    tagline: "Indestructible 316L Marine-Grade Stainless Steel BIP39 backup vault",
-    category: "Security & Backup",
-    priceUsd: 119,
-    priceSats: 124947,
+    id: "casio-fx-991cw-scientific-calculator",
+    name: "Casio FX-991CW ClassWiz Scientific Calculator",
+    tagline: "Advanced non-programmable scientific calculator with high-resolution 4-gradation natural display",
+    category: "Tech & Electronics",
+    priceUsd: 6500,
+    priceSats: 0,
     rating: 4.99,
-    reviewsCount: 2150,
+    reviewsCount: 1150,
     inStock: true,
-    inventory: 120,
-    featured: false,
-    badge: "2,500°F Fireproof",
-    description: "Fireproof, waterproof, corrosion-resistant, and crushproof. Designed to preserve 12, 18, or 24-word seed phrases across centuries without electronic failure or degradation. Includes tungsten-carbide center punch and tamper-evident locking screws.",
+    inventory: 35,
+    featured: true,
+    badge: "Official Exam Approved",
+    description: "The ultimate mathematical computing companion for G.C.E. A/L, Cambridge, and Edexcel exams. Features over 540 functions, spreadsheet calculation, matrix operations, statistical regressions, and QR code graph visualization.",
     features: [
-      "Melting point exceeds 2,550°F (1,400°C)",
-      "Immune to acid submersion, rust, and salt spray",
-      "Universal BIP39 compatibility (first 4 letters mnemonic indexing)",
-      "Laser-engraved grid layout with anti-slip alignment guides",
-      "Tamper-evident serial number security seal"
+      "Natural Textbook Display shows expressions exactly as written",
+      "Over 540 scientific, engineering, and statistical functions",
+      "Dual Power: High-efficiency solar cell + backup lithium battery",
+      "Intuitive menu navigation with cursor keys and high-speed CPU",
+      "Approved for GCE O/L, A/L, Cambridge, and SAT examinations"
     ],
     specs: [
-      { label: "Material", value: "AISI 316L Marine Austenitic Steel" },
-      { label: "Dimensions", value: "100mm x 60mm x 6mm" },
-      { label: "Weight", value: "420g Solid Steel" },
-      { label: "Blast Rating", value: "50 Caliber Shockwave Tested" },
-      { label: "Included Tools", value: "Spring-loaded Tungsten Punch & Security Screws" }
+      { label: "Display", value: "High-Resolution 4-Gradation Matrix" },
+      { label: "Power Source", value: "Two-Way (Solar + LR44 Battery)" },
+      { label: "Key Material", value: "Wear-Resistant Plastic Resin" },
+      { label: "Dimensions", value: "162 x 77 x 10.7 mm" },
+      { label: "Warranty", value: "3 Years Official Casio Warranty" }
     ],
-    firmwareVersion: "Analog Hardware",
-    securityRating: "Indestructible Physical Vault",
-    leadTime: "Immediate Dispatch",
-    colorAccent: "#94A3B8"
+    firmwareVersion: "ClassWiz CW Series",
+    securityRating: "100% Genuine with QR Verification",
+    leadTime: "Immediate Dispatch (Insured Courier)",
+    colorAccent: "#3B82F6"
   },
   {
-    id: "nostr-lightning-terminal-mk2",
-    name: "Nostr Lightning POS Terminal MK-II",
-    tagline: "Point-of-sale handheld terminal for sub-second zero-fee Bitcoin Lightning settlements",
-    category: "Sovereign Nodes",
-    priceUsd: 349,
-    priceSats: 366442,
-    rating: 4.91,
+    id: "rotring-rapid-pro-mechanical-pencil",
+    name: "rOtring Rapid PRO Drafting Pencil Set (0.5mm)",
+    tagline: "Professional German engineered all-metal drafting instrument with cushion lead mechanism",
+    category: "Stationery & Office",
+    priceUsd: 4800,
+    priceSats: 0,
+    rating: 4.92,
     reviewsCount: 410,
     inStock: true,
-    inventory: 26,
+    inventory: 28,
     featured: false,
-    badge: "Sub-Second LNURL",
-    description: "Empower brick-and-mortar merchants and mobile vendors. Supports LNURL-Pay, NFC Bolt Cards, on-chain QR codes, and automated custodial/non-custodial settlement into cold storage multisig wallets.",
+    badge: "German Precision",
+    description: "Crafted from solid brass with a knurled anti-slip grip and matte black hexagonal barrel. Incorporates an innovative sliding sleeve and cushion point mechanism that virtually eliminates lead breakage during rapid writing and technical drafting.",
     features: [
-      "Contactless NFC Bolt Card Tap-to-Pay in <300ms",
-      "Dynamic Satoshi/Fiat Currency Auto-Conversion",
-      "Thermal Receipt Printer Built-in with Custom Nostr Invoices",
-      "4G LTE SIM Slot + Dual-Band Wi-Fi 6",
-      "Direct Zero-Fee Settlement to Your Self-Custody Node"
+      "Solid brass all-metal hexagonal body for balanced ergonomics",
+      "Knurled non-slip metal grip for fatigue-free drafting and drawing",
+      "Cushioned lead sleeve prevents breakage under heavy writing pressure",
+      "Pocket-safe push-mechanism with retractable tip",
+      "Includes 3 tubes of high-polymer HB replacement leads and erasers"
     ],
     specs: [
-      { label: "Display", value: "5.5\" Glove-Friendly Gorilla Glass Multi-Touch" },
-      { label: "Printer", value: "High-Speed 58mm Thermal Line (70mm/sec)" },
-      { label: "NFC Reader", value: "NXP ISO/IEC 14443 Type A/B BoltCard" },
-      { label: "Battery", value: "5000mAh 18-Hour Continuous Operation" },
-      { label: "OS", value: "Hardened Custom Android 13 Enterprise" }
+      { label: "Brand", value: "rOtring Germany" },
+      { label: "Lead Size", value: "0.5mm Standard Drafting" },
+      { label: "Material", value: "Full Brass Body with Matte Epoxy" },
+      { label: "Weight", value: "25 grams (Optimal Ergonomic Balance)" },
+      { label: "Origin", value: "Designed in Germany" }
     ],
-    firmwareVersion: "v3.2.1-lightningPOS",
-    securityRating: "PCI PTS 6.x Compliant Enclave",
+    firmwareVersion: "Rapid PRO Series",
+    securityRating: "Authentic German Craftsmanship",
+    leadTime: "In Stock (Dispatched in 24h)",
+    colorAccent: "#EF4444"
+  },
+  {
+    id: "premium-leather-hardbound-journal",
+    name: "Prasanthi Craft Executive Hardbound Notebook (A5)",
+    tagline: "Archival-grade 120gsm ink-proof fountain pen friendly journal with lay-flat thread binding",
+    category: "Stationery & Office",
+    priceUsd: 2400,
+    priceSats: 0,
+    rating: 4.88,
+    reviewsCount: 295,
+    inStock: true,
+    inventory: 50,
+    featured: false,
+    badge: "120gsm Fountain Proof",
+    description: "Designed for thinkers, writers, and students. Features 240 numbered pages of acid-free 120gsm ivory paper that resists ghosting and bleed-through from all inks. Finished with an expandable inner pocket, dual ribbon bookmarks, and an elastic closure.",
+    features: [
+      "240 numbered pages of premium 120gsm fountain pen friendly paper",
+      "Thread-bound spine opens 180° completely flat on any surface",
+      "Includes 8-page index and perforated notes section at the rear",
+      "Expandable gusseted back pocket for loose sheets and receipts",
+      "Water-resistant vegan PU leather cover with gold debossed monogram"
+    ],
+    specs: [
+      { label: "Format", value: "A5 (148 x 210 mm)" },
+      { label: "Paper Weight", value: "120 gsm Acid-Free Ivory" },
+      { label: "Ruling", value: "5mm Subtle Dotted Matrix" },
+      { label: "Pages", value: "240 Numbered Pages" },
+      { label: "Closure", value: "Custom Elastic Band + Pen Loop" }
+    ],
+    firmwareVersion: "Classic Edition",
+    securityRating: "Archival Grade Standard",
     leadTime: "Immediate Dispatch",
+    colorAccent: "#10B981"
+  },
+  {
+    id: "ergonomic-student-orthopedic-backpack",
+    name: "Prasanthi Craft Ergonomic Multi-Pocket School Backpack",
+    tagline: "Orthopedic spinal-support school backpack with waterproof ballistic nylon and padded laptop pocket",
+    category: "School Essentials",
+    priceUsd: 5900,
+    priceSats: 0,
+    rating: 4.94,
+    reviewsCount: 360,
+    inStock: true,
+    inventory: 22,
+    featured: true,
+    badge: "Spinal Support Certified",
+    description: "Engineered to distribute heavy book loads evenly across the shoulders and lumbar region. Built with tear-resistant waterproof 900D nylon, reinforced dual zippers, dedicated 15.6-inch padded laptop compartment, and reflective safety bands.",
+    features: [
+      "S-curve ergonomic memory foam shoulder straps with breathable mesh",
+      "Reinforced heavy-duty bottom panel supports up to 25kg book loads",
+      "Multi-tier organizer pockets for stationery, water bottles, and electronics",
+      "Hydrophobic water-repellent coating shields against tropical rain",
+      "360-degree reflective piping for nighttime pedestrian safety"
+    ],
+    specs: [
+      { label: "Capacity", value: "28 Liters (Large 3-Compartment)" },
+      { label: "Material", value: "900D Ballistic Waterproof Oxford Nylon" },
+      { label: "Laptop Sleeve", value: "Padded up to 15.6\" Devices" },
+      { label: "Zippers", value: "Heavy-Duty YKK Dual Smooth Glides" },
+      { label: "Weight", value: "780 grams (Ultra Lightweight)" }
+    ],
+    firmwareVersion: "2026 Pro Series",
+    securityRating: "ISO 9001 Quality Assured",
+    leadTime: "In Stock (Islandwide Delivery)",
     colorAccent: "#FFB800"
   },
   {
-    id: "genesis-block-gold-ingot",
-    name: "Physical 21,000 Sats Genesis Ingot",
-    tagline: "Serialized 24K pure gold alloy proof bar loaded with verifiable timelocked UTXO",
-    category: "Cryptographic Relics",
-    priceUsd: 580,
-    priceSats: 608987,
-    rating: 5.0,
-    reviewsCount: 640,
-    inStock: true,
-    inventory: 9,
-    featured: true,
-    badge: "Limited Genesis Batch #21",
-    description: "A tangible convergence of physical gold and cryptographic proof-of-work. Each bar contains exactly 21,000 Satoshis verifiable on the blockchain through a tamper-evident holographic private key seal with OP_CHECKLOCKTIMEVERIFY timelock inscription.",
-    features: [
-      "Individually Numbered & Laser Inscribed (001 - 210 Edition)",
-      "99.99% Fine Investment-Grade Gold Layered Core",
-      "Multi-Layer Tamper-Evident Optical Hologram Security",
-      "Comes with Cryptographic Certificate of Provenance",
-      "Museum-Grade Airtight Acrylic Display Case Included"
-    ],
-    specs: [
-      { label: "Weight", value: "1 Troy Ounce (31.1035 grams)" },
-      { label: "Purity", value: "24K .9999 Pure Fine Layered Gold" },
-      { label: "UTXO Balance", value: "21,000 Satoshis (Verifiable On-Chain)" },
-      { label: "Security Seal", value: "Micro-Optical 3D Diffractive Hologram" },
-      { label: "Mintage Limit", value: "Strictly Limited to 2,100 Worldwide" }
-    ],
-    firmwareVersion: "Blockchain Inscribed",
-    securityRating: "Holographic Proof-of-Reserve",
-    leadTime: "Ships in Velvet Display Box",
-    colorAccent: "#FFD600"
-  },
-  {
-    id: "bitvault-titanium-capsule",
-    name: "BitVault Genesis X500 Capsule",
-    tagline: "Aerospace Grade 5 Titanium hermetic cold storage capsule for multisig keys",
-    category: "Cold Storage",
-    priceUsd: 189,
-    priceSats: 198446,
-    rating: 4.93,
-    reviewsCount: 520,
-    inStock: true,
-    inventory: 64,
-    featured: false,
-    badge: "Submersible 10,000ft",
-    description: "Precision-machined from solid Grade 5 Titanium bar stock. Features double Viton O-ring seals, EMP shielding, and cryogenic freezing tolerance down to -200°C. Protects up to four seed cards in an airtight vacuum.",
-    features: [
-      "100% Waterproof to 3,000 meters depth",
-      "Electromagnetic Pulse (EMP) & Solar Flare Faraday Cage",
-      "Corrosion-proof in boiling nitric acid",
-      "Laser-welded serialized key ring attachment",
-      "Dual Viton high-temperature fluoroelastomer seals"
-    ],
-    specs: [
-      { label: "Material", value: "Titanium Ti-6Al-4V (Grade 5)" },
-      { label: "Pressure Tolerance", value: "500 Bar (7,250 PSI)" },
-      { label: "Temperature Range", value: "-200°C to +600°C" },
-      { label: "Capacity", value: "4 Stainless Steel BIP39 Seed Tiles" },
-      { label: "Finish", value: "DLC (Diamond-Like Carbon) Void Black" }
-    ],
-    firmwareVersion: "Mechanical Spec 1.0",
-    securityRating: "Mil-Spec EMP Hardened",
-    leadTime: "Immediate Dispatch",
-    colorAccent: "#F59E0B"
-  },
-  {
-    id: "quantum-hsm-vault",
-    name: "Quantum-Resistant Enterprise HSM",
-    tagline: "FIPS 140-3 Level 4 hardware security module for corporate Bitcoin treasuries",
-    category: "Security & Backup",
-    priceUsd: 4890,
-    priceSats: 5134397,
+    id: "staedtler-noris-stationery-geometry-set",
+    name: "Staedtler Noris Complete Math & Geometry Kit",
+    tagline: "Comprehensive 10-piece metal geometry box with precision compass, dividers, and shatterproof rulers",
+    category: "School Essentials",
+    priceUsd: 1750,
+    priceSats: 0,
     rating: 4.97,
-    reviewsCount: 94,
+    reviewsCount: 510,
     inStock: true,
-    inventory: 6,
-    featured: true,
-    badge: "FIPS 140-3 Level 4",
-    description: "The apex of cryptographic custody for hedge funds, family offices, and DAOs. Features active environmental intrusion sensors that instantly wipe secrets upon physical drilling, laser probing, or cryogenic side-channel attacks.",
+    inventory: 90,
+    featured: false,
+    badge: "German Standards",
+    description: "The gold standard geometry set used by students worldwide. Housed in a durable vintage-style embossed metal tin, containing self-centering precision compass, divider, 15cm ruler, set squares, protractor, and sharpener.",
     features: [
-      "3-of-5 / M-of-N Threshold Signature Scheme (TSS) Engine",
-      "Active Mesh Physical Barrier with Instant Zeroization",
-      "Quantum-Resistant Crystals-Kyber & Dilithium Co-processor",
-      "Dual Redundant Hot-Swappable Power Supplies",
-      "1U Rackmount Server Chassis with OLED Audit Screen"
+      "Precision metal spring-bow compass with safety blunt-needle tip",
+      "Clear transparent shatterproof scale rulers with millimeter gradations",
+      "Embossed vintage tin storage case with anti-scratch internal tray",
+      "Includes HB mechanical pencil lead refills and dust-free eraser",
+      "Conforms strictly to national and international school exam regulations"
     ],
     specs: [
-      { label: "Standard", value: "FIPS 140-3 Level 4 / CC EAL7 Ready" },
-      { label: "Signing Speed", value: "12,000 Schnorr Signatures / Sec" },
-      { label: "Form Factor", value: "1U 19\" Rackmount Chassis" },
-      { label: "Tamper Response", value: "<15 Nanoseconds Physical Zeroize" },
-      { label: "Interface", value: "Dual 10Gb SFP+ Isolated Cryptographic Fibre" }
+      { label: "Brand", value: "Staedtler Mars GmbH Germany" },
+      { label: "Components", value: "10-Piece Full Exam Kit" },
+      { label: "Case", value: "Sturdy Lithographed Metal Storage Tin" },
+      { label: "Safety", value: "EN71 Non-Toxic Child Safe Certified" },
+      { label: "Origin", value: "Made in Germany" }
     ],
-    firmwareVersion: "v9.4.0-hardened",
-    securityRating: "FIPS 140-3 Level 4",
-    leadTime: "5 Business Days (White Glove Courier)",
-    colorAccent: "#FFB800"
+    firmwareVersion: "Noris Edition",
+    securityRating: "Genuine European Quality",
+    leadTime: "Immediate Dispatch",
+    colorAccent: "#FFD600"
   }
 ];
 
 export const CATEGORIES = [
-  "All Protocol Gear",
-  "Cold Storage",
-  "Mining & ASICs",
-  "Sovereign Nodes",
-  "Cryptographic Relics",
-  "Security & Backup"
+  "All Products",
+  "Books & Workbooks",
+  "Tech & Electronics",
+  "Stationery & Office",
+  "School Essentials",
+  "Novelties & Gifts"
 ] as const;
 
 export const LIVE_NETWORK_METRICS = {
-  blockHeight: 885412,
-  hashrateEH: "712.4 EH/s",
-  halvingProgress: "22.8%",
-  mempoolFeeSatsVB: "8 sat/vB",
-  lightningNodes: "14,890",
-  lightningCapacityBTC: "5,410.8 BTC",
-  btcUsdPrice: 95240,
-  priceChange24h: "+3.84%"
+  activeProducts: 48,
+  satisfactionRate: "99.4%",
+  verifiedOrders: "15,200+",
+  deliveryTime: "24-48 Hours",
+  supportHotline: "+9477 423 0976",
+  storeLocation: "Maharagama, Colombo",
+  freeDeliveryThreshold: "LKR 5,000"
 };

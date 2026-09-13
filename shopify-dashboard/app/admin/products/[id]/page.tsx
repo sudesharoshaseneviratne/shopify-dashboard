@@ -56,7 +56,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   // Main Form States
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Cold Storage");
+  const [category, setCategory] = useState("Books & Workbooks");
   const [price, setPrice] = useState("0.00");
   const [compareAtPrice, setCompareAtPrice] = useState("");
   const [costPerItem, setCostPerItem] = useState("");
@@ -80,7 +80,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   // Organization States
   const [selectedStatus, setSelectedStatus] = useState<"Active" | "Draft" | "Archived" | "Unlisted">("Active");
   const [productType, setProductType] = useState("General");
-  const [vendor, setVendor] = useState("Satoshi DeFi");
+  const [vendor, setVendor] = useState("Prasanthi Craft");
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -110,11 +110,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }, []);
 
   const [availableCollections, setAvailableCollections] = useState<string[]>([
-    "Cold Storage",
-    "Mining & ASICs",
-    "Sovereign Nodes",
-    "Cryptographic Relics",
-    "Security & Backup"
+    "Books & Workbooks",
+    "Tech & Electronics",
+    "Stationery & Office",
+    "School Essentials",
+    "Novelties & Gifts"
   ]);
 
   // Fetch product data on mount
@@ -138,14 +138,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
         setTitle(data.name || "");
         setDescription(data.description || "");
-        setCategory(data.category || (cols?.[0]?.title ?? "Cold Storage"));
+        setCategory(data.category || (cols?.[0]?.title ?? "Books & Workbooks"));
         setPrice(data.priceFormatted || data.priceUsd?.toFixed(2) || "0.00");
         setCompareAtPrice(data.compareAtPrice || "");
         setQuantity(String(data.inventory ?? 0));
         setSelectedStatus(data.status || "Active");
         setUploadedImages(data.images || []);
         setProductType(data.productType || data.category || "General");
-        setVendor(data.vendor || "Satoshi DeFi");
+        setVendor(data.vendor || "Prasanthi Craft");
         setSku(data.id || "");
       } catch (err) {
         console.error("Failed to fetch product:", err);
@@ -503,13 +503,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="space-y-1.5">
                 <label className="text-[12.5px] font-semibold text-[#303030]">Price</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-[13px] text-[#616161]">$</span>
+                  <span className="absolute left-3 top-2 text-[12px] font-medium text-[#616161]">LKR</span>
                   <input
                     type="text"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-7 pr-3 py-2 outline-none focus:border-[#005bd3] transition bg-white"
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-2 outline-none focus:border-[#005bd3] transition bg-white"
                   />
                 </div>
               </div>
@@ -517,13 +517,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="space-y-1.5">
                 <label className="text-[12.5px] font-semibold text-[#303030]">Compare-at price</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-[13px] text-[#616161]">$</span>
+                  <span className="absolute left-3 top-2 text-[12px] font-medium text-[#616161]">LKR</span>
                   <input
                     type="text"
                     value={compareAtPrice}
                     onChange={(e) => setCompareAtPrice(e.target.value)}
                     placeholder="0.00"
-                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-7 pr-3 py-2 outline-none focus:border-[#005bd3] transition bg-white"
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-2 outline-none focus:border-[#005bd3] transition bg-white"
                   />
                 </div>
               </div>
@@ -545,20 +545,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               <div className="space-y-1">
                 <label className="text-[12px] font-medium text-[#616161]">Cost per item</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-[13px] text-[#616161]">$</span>
+                  <span className="absolute left-3 top-2 text-[12px] font-medium text-[#616161]">LKR</span>
                   <input
                     type="text"
                     value={costPerItem}
                     onChange={(e) => setCostPerItem(e.target.value)}
                     placeholder="0.00"
-                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-7 pr-3 py-1.5 outline-none focus:border-[#005bd3] transition bg-white"
+                    className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-1.5 outline-none focus:border-[#005bd3] transition bg-white"
                   />
                 </div>
               </div>
               <div className="space-y-1">
                 <span className="text-[12px] font-medium text-[#616161]">Profit</span>
                 <div className="text-[13px] font-semibold text-[#1a1a1a] pt-1.5">
-                  {priceNum > 0 ? `$${profit.toFixed(2)}` : "--"}
+                  {priceNum > 0 ? `LKR ${profit.toFixed(2)}` : "--"}
                 </div>
               </div>
               <div className="space-y-1">
@@ -675,10 +675,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
             <div className="pt-2 space-y-1">
               <div className="text-[14px] text-[#1a0dab] font-medium hover:underline cursor-pointer truncate">
-                {title || "Product Title"} — Satoshi DeFi
+                {title || "Product Title"} — Prasanthi Craft
               </div>
               <div className="text-[12px] text-[#006621] truncate">
-                https://satoshidefi.store/products/{productId}
+                https://prasanthicraft.com/products/{productId}
               </div>
               <div className="text-[12.5px] text-[#545454] line-clamp-2">
                 {description || "No description provided."}
@@ -804,10 +804,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   onChange={(e) => setVendor(e.target.value)}
                   className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
                 >
-                  <option>Satoshi DeFi</option>
-                  <option>Learnix LK</option>
+                  <option>Prasanthi Craft</option>
                   <option>Oxford Press</option>
                   <option>Pearson</option>
+                  <option>General Merchant</option>
                 </select>
                 <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
               </div>

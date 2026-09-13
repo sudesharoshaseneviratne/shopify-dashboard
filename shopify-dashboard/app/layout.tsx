@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "Admin Dashboard for the Store Front",
+  title: "Prasanthi Craft | Official Online Store — Books, Stationery & Crafts",
+  description: "Official online store for handcrafted arts, curriculum textbooks, educational workbooks, and fine stationery.",
 };
 
 export default function RootLayout({

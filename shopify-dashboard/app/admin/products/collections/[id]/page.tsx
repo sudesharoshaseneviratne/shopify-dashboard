@@ -87,7 +87,7 @@ export default function CollectionEditPage({ params }: { params: Promise<{ id: s
           allProds.map((p) => ({
             id: p.id,
             name: p.name,
-            price: `$${p.rawPrice.toFixed(2)}`,
+            price: `LKR ${p.rawPrice.toFixed(2)}`,
             status: p.status,
           }))
         );
@@ -380,10 +380,10 @@ export default function CollectionEditPage({ params }: { params: Promise<{ id: s
             <h3 className="text-[13.5px] font-semibold text-[#1a1a1a]">Search engine listing</h3>
             <div className="space-y-1 pt-1">
               <div className="text-[14px] text-[#1a0dab] font-medium hover:underline cursor-pointer truncate">
-                {title || "Collection Title"} — Satoshi DeFi Store
+                {title || "Collection Title"} — Prasanthi Craft
               </div>
               <div className="text-[12px] text-[#006621] truncate">
-                https://satoshidefi.store/products?category={encodeURIComponent(title)}
+                https://prasanthicraft.com/products?category={encodeURIComponent(title)}
               </div>
               <div className="text-[12.5px] text-[#545454] line-clamp-2">
                 {description || "No description provided."}

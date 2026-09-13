@@ -17,7 +17,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
   tagline: text("tagline").default(""),
-  category: text("category").notNull(), // 'Cold Storage' | 'Mining & ASICs' | 'Sovereign Nodes' | 'Cryptographic Relics' | 'Security & Backup'
+  category: text("category").notNull(), // 'Books & Workbooks' | 'Tech & Electronics' | 'Stationery & Office' | 'School Essentials' | 'Novelties & Gifts'
   priceUsd: numeric("price_usd", { precision: 12, scale: 2 }).notNull(),
   priceSats: integer("price_sats").notNull().default(0),
   rating: numeric("rating", { precision: 3, scale: 2 }).default("5.00"),
@@ -97,11 +97,16 @@ export const customers = pgTable("customers", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").unique(),
+  passwordHash: text("password_hash"),
   phone: text("phone"),
   ordersCount: integer("orders_count").default(0),
   totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).default("0.00"),
+  subscriptionStatus: text("subscription_status").default("Subscribed"), // 'Subscribed' | 'Not subscribed'
+  location: text("location").default("Sri Lanka"),
   shippingAddress: jsonb("shipping_address").$type<OrderShippingAddress>(),
   notes: text("notes").default(""),
+  role: text("role").default("customer"), // 'customer' | 'admin'
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
@@ -111,7 +116,7 @@ export const customers = pgTable("customers", {
 // ==========================================================================
 export const discounts = pgTable("discounts", {
   id: text("id").primaryKey(),
-  code: text("code").unique().notNull(), // e.g. 'SATOSHI21'
+  code: text("code").unique().notNull(), // e.g. 'WELCOME10'
   discountPercent: integer("discount_percent").default(0),
   discountAmount: numeric("discount_amount", { precision: 10, scale: 2 }).default("0.00"),
   minOrderAmount: numeric("min_order_amount", { precision: 10, scale: 2 }).default("0.00"),
@@ -128,13 +133,13 @@ export const discounts = pgTable("discounts", {
 // ==========================================================================
 export const storeSettings = pgTable("store_settings", {
   id: integer("id").primaryKey().default(1),
-  storeName: text("store_name").default("SATOSHI DEFI"),
-  supportPhone: text("support_phone").default("+9475 245 5812"),
-  supportEmail: text("support_email").default("support@satoshidefi.vault"),
+  storeName: text("store_name").default("PRASANTHI CRAFT"),
+  supportPhone: text("support_phone").default("+9477 423 0976"),
+  supportEmail: text("support_email").default("prasanthicrafts@gmail.com"),
   freeShippingThreshold: numeric("free_shipping_threshold", { precision: 10, scale: 2 }).default("5000.00"),
   standardShippingFee: numeric("standard_shipping_fee", { precision: 10, scale: 2 }).default("350.00"),
-  marqueeAnnouncement: text("marquee_announcement").default("USE VOUCHER CODE SATOSHI21 FOR 21% OFF"),
-  btcUsdRate: numeric("btc_usd_rate", { precision: 12, scale: 2 }).default("95240.00"),
+  marqueeAnnouncement: text("marquee_announcement").default("USE VOUCHER CODE WELCOME10 FOR 10% OFF"),
+  btcUsdRate: numeric("btc_usd_rate", { precision: 12, scale: 2 }).default("320.00"),
   isMaintenanceMode: boolean("is_maintenance_mode").default(false),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

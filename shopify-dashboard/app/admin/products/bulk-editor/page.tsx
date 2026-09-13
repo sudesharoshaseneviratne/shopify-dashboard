@@ -18,40 +18,11 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/admin/Badge";
 
-const baseTitles = [
-  "iPrimary English Fiction Anthology Year 1",
-  "Nouvel Apprenons Le Francais : Cahier d exercices - WorkBook 0",
-  "Abacus Year 2 Workbook 3",
-  "Abacus Year 2 Textbook",
-  "THE SECRET SEVEN - SECRET SEVEN ADVENTURE",
-  "THE BUDDHIST WAY OF LIFE FOR GRADE 5 STU - BOOK 5",
-  "Sinhala Wada Potha 3",
-  "Sinhala Wada Potha 2",
-  "Sinhala Kiyaveem Potha 5",
-  "Sinhala Kiyaveem Potha 4",
-  "Sinhala Kiyaveem Potha 3",
-  "Sinhala Kiyaveem Potha 2",
-  "RADIANT WAY THIRD STEP",
-  "OXFORD STUDENT LEARNERS DICTIONARY",
-  "Oxford Reading Circle Primer revised edition",
-  "Grade 6 Mathematics Pupil Book",
-  "Grade 7 English Literature Companion",
-  "Grade 8 Science & Technology Guide",
-  "Grade 9 History & Civics Textbook",
-  "Grade 10 Information & Communication Tech",
-  "GCE O/L Mathematics Past Papers & Answers",
-  "GCE A/L Combined Mathematics Mechanics Vol 1",
-  "GCE A/L Physics Theory & Revision Manual",
-  "GCE A/L Chemistry Inorganic Chemistry Vol 2",
-  "Harry Potter and the Philosopher's Stone",
-  "Famous Five - Five On A Treasure Island",
-  "Malalasekera English-Sinhala Dictionary",
-  "Gunasena Sinhala Ingrisi Koshaya Premium",
-  "Targeting Mathematics Primary Year 1",
-  "Targeting Science Primary Year 2",
-  "Scholastic Early Readers Level 1 Set",
-  "Cambridge Primary English Learner's Book 3",
-];
+import { 
+  getBulkEditorProductsAction, 
+  saveBulkEditorProductsAction, 
+  type BulkProductItem 
+} from "@/app/actions/products";
 
 const sampleMediaFiles = [
   { id: "m1", name: "cover_73179_90401.JPG", type: "JPG", src: "/sample_cover_1.jpg", checked: true },
@@ -63,65 +34,6 @@ const sampleMediaFiles = [
 ];
 
 const statuses = ["Active", "Active", "Active", "Draft", "Unlisted", "Archived"];
-
-// Full 120 Products Dataset matching Products Page IDs
-const initialBulkProducts = Array.from({ length: 120 }, (_, i) => {
-  const idStr = (i + 1).toString();
-  const baseTitle = baseTitles[i % baseTitles.length];
-  const copyNum = Math.floor(i / baseTitles.length);
-  const name = copyNum > 0 ? `${baseTitle} (Edition ${copyNum + 1})` : baseTitle;
-  const status = statuses[i % statuses.length];
-  const price = ((i % 50) * 150 + 450).toFixed(2);
-  const available = ((i * 7) % 25).toString();
-
-  return {
-    id: idStr,
-    name,
-    status,
-    category: i % 4 === 0 ? "Print Books" : i % 4 === 1 ? "Textbooks" : i % 4 === 2 ? "Workbook" : "General",
-    vendor: i % 3 === 0 ? "Learnix LK" : i % 3 === 1 ? "Oxford Press" : "Pearson",
-    price,
-    available,
-    onHand: available,
-    description: `${name} official edition product description`,
-    media: i % 3 === 0 ? "" : "1 image",
-    hasImage: i % 3 !== 0,
-    imageSrc: i % 3 !== 0 ? "/sample_cover_1.jpg" : "",
-    tags: i % 2 === 0 ? "Textbooks, Primary" : "Workbook, Grade 5",
-    type: i % 3 === 0 ? "Workbook" : i % 3 === 1 ? "Reader" : "Textbook",
-    template: "Default product",
-    salesChannels: "Online Store",
-    storeSchedule: "Immediate",
-    publishDate: "Aug 13, 2026",
-    unitPrice: price,
-    comparePrice: (parseFloat(price) * 1.15).toFixed(2),
-    costPerItem: (parseFloat(price) * 0.6).toFixed(2),
-    chargeTaxes: "Yes",
-    sku: `SKU-${1000 + i}`,
-    barcode: `978${100000 + i}`,
-    continueSelling: "No",
-    trackQuantity: "Yes",
-    package: "Standard",
-    weight: "0.5 kg",
-    physicalProduct: "Yes",
-    hsCode: "4901.99",
-    countryOrigin: "Sri Lanka",
-    seoTitle: name,
-    seoDescription: `${name} primary edition`,
-    seoHandle: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-    customProduct: "",
-    complementary: "",
-    relatedSettings: "",
-    relatedProducts: "",
-    searchBoosts: "",
-    ageGroup: "6-12 years",
-    color: i % 2 === 0 ? "Blue" : "Red",
-    coverType: i % 2 === 0 ? "Paperback" : "Hardcover",
-    targetAudience: "Students",
-    languageVersion: "English",
-    genre: "Education",
-  };
-});
 
 interface ColumnField {
   key: string;
@@ -275,10 +187,12 @@ function StatusCell({
 function MediaCellPopover({
   productName,
   hasImage,
+  imageSrc,
   onOpenSelectFileModal,
 }: {
   productName: string;
   hasImage: boolean;
+  imageSrc?: string;
   onOpenSelectFileModal: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -301,9 +215,13 @@ function MediaCellPopover({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full h-full flex items-center gap-2 px-2 py-0.5 hover:bg-[#fafafa] transition cursor-pointer text-left rounded"
       >
-        {hasImage ? (
-          <div className="w-6 h-6 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0">
-            <div className="w-full h-full bg-gradient-to-tr from-blue-300 to-green-300 rounded" />
+        {hasImage && imageSrc ? (
+          <div className="w-6 h-6 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={imageSrc} alt="" className="w-full h-full object-cover" />
+          </div>
+        ) : hasImage ? (
+          <div className="w-6 h-6 rounded border border-[#e1e3e5] bg-amber-100 flex items-center justify-center shrink-0 text-[10px] font-bold text-amber-800">
+            {productName.charAt(0)}
           </div>
         ) : (
           <div className="w-6 h-6 rounded border border-dashed border-[#c9cccf] bg-gray-50 flex items-center justify-center shrink-0">
@@ -332,9 +250,13 @@ function MediaCellPopover({
           {hasImage ? (
             <div className="flex items-center gap-3">
               <div className="w-24 h-24 border border-[#e1e3e5] rounded-xl overflow-hidden bg-gray-50 flex items-center justify-center relative shadow-2xs">
-                <div className="w-full h-full bg-gradient-to-tr from-blue-300 to-green-300 flex items-center justify-center text-xs font-semibold text-gray-700">
-                  Preview
-                </div>
+                {imageSrc ? (
+                  <img src={imageSrc} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-tr from-amber-200 to-yellow-300 flex items-center justify-center text-xs font-semibold text-amber-900">
+                    {productName.charAt(0)}
+                  </div>
+                )}
               </div>
               <button
                 type="button"
@@ -548,7 +470,9 @@ function BulkEditorContent() {
     [isInventoryMode]
   );
 
-  const [products, setProducts] = useState(initialBulkProducts);
+  const [products, setProducts] = useState<BulkProductItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isModified, setIsModified] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -618,16 +542,68 @@ function BulkEditorContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Filter products based on query param IDs
+  // Fetch real database products based on query param IDs (or all products if no ids)
   useEffect(() => {
-    if (idsParam) {
-      const selectedIdSet = new Set(idsParam.split(","));
-      const filtered = initialBulkProducts.filter((p) => selectedIdSet.has(p.id));
-      if (filtered.length > 0) {
-        setProducts(filtered);
+    let isMounted = true;
+    async function loadProducts() {
+      setIsLoading(true);
+      try {
+        const ids = idsParam
+          ? idsParam.split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined;
+        const data = await getBulkEditorProductsAction(ids);
+        if (isMounted) {
+          setProducts(data);
+        }
+      } catch (err) {
+        console.error("Failed to load products for bulk editor:", err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
+    loadProducts();
+    return () => {
+      isMounted = false;
+    };
   }, [idsParam]);
+
+  // Dynamic Categories and Vendors based on loaded products
+  const availableCategories = useMemo(() => {
+    const cats = Array.from(new Set(products.map((p) => p.category?.trim()).filter(Boolean)));
+    const defaults = [
+      "Cake Toppers",
+      "Pipe cleaner products",
+      "Happy birthday",
+      "Valentine",
+      "Christmas",
+      "Anniversary",
+      "Children's day",
+      "New year",
+      "Heart",
+      "Father's day",
+      "Butterfly",
+      "Teacher's day",
+      "Love",
+      "Flower",
+      "Vesak",
+      "Animals",
+      "Leaves",
+      "Mother's day",
+      "Cake box",
+      "Boarder",
+      "Couple",
+      "General",
+    ];
+    return Array.from(new Set([...cats, ...defaults]));
+  }, [products]);
+
+  const availableVendors = useMemo(() => {
+    const vens = Array.from(new Set(products.map((p) => p.vendor?.trim()).filter(Boolean)));
+    const defaults = ["Prasanthi Craft"];
+    return Array.from(new Set([...vens, ...defaults]));
+  }, [products]);
 
   // Back button click handler
   const handleBackClick = () => {
@@ -641,15 +617,39 @@ function BulkEditorContent() {
   // Field change handler
   const handleCellChange = (id: string, field: string, value: string) => {
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+      prev.map((p) => {
+        if (p.id !== id) return p;
+        const updated = { ...p, [field]: value };
+        if (field === "title") {
+          updated.name = value;
+        }
+        if (field === "type") {
+          updated.category = value;
+        } else if (field === "category") {
+          updated.type = value;
+        }
+        return updated;
+      })
     );
     setIsModified(true);
   };
 
-  const handleSave = () => {
-    setIsModified(false);
-    setToastMessage("Saved bulk product changes");
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      const res = await saveBulkEditorProductsAction(products);
+      if (res.success) {
+        setIsModified(false);
+        setToastMessage(`Saved ${res.count} product${res.count === 1 ? "" : "s"} successfully`);
+      } else {
+        setToastMessage(res.error || "Failed to save product changes");
+      }
+    } catch (err: any) {
+      setToastMessage(err.message || "Failed to save product changes");
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setToastMessage(null), 3500);
+    }
   };
 
   const toggleColumnKey = (key: string) => {
@@ -691,7 +691,10 @@ function BulkEditorContent() {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
         const prod = products.find((p) => p.id === focusedCell.id);
         if (prod) {
-          const val = (prod as Record<string, any>)[focusedCell.field] || "";
+          const val =
+            focusedCell.field === "title"
+              ? prod.name
+              : (prod as Record<string, any>)[focusedCell.field] || "";
           await navigator.clipboard.writeText(val);
           setToastMessage(`Copied "${val}" to clipboard`);
           setTimeout(() => setToastMessage(null), 2500);
@@ -814,14 +817,17 @@ function BulkEditorContent() {
           <div className="h-4 w-[1px] bg-[#e1e3e5]" />
           <div className="flex items-center gap-2">
             <h1 className="text-[15px] font-semibold text-[#1a1a1a]">
-              Editing {products.length}{" "}
-              {isInventoryMode
-                ? products.length === 1
-                  ? "inventory item"
-                  : "inventory items"
-                : products.length === 1
-                ? "product"
-                : "products"}
+              {isLoading
+                ? "Loading items..."
+                : `Editing ${products.length} ${
+                    isInventoryMode
+                      ? products.length === 1
+                        ? "inventory item"
+                        : "inventory items"
+                      : products.length === 1
+                      ? "product"
+                      : "products"
+                  }`}
             </h1>
             {/* Unsaved Changes Badge matching Screenshot 1 */}
             {isModified && (
@@ -905,391 +911,453 @@ function BulkEditorContent() {
           <button
             type="button"
             onClick={handleSave}
-            disabled={!isModified}
+            disabled={!isModified || isSaving}
             className={cn(
-              "px-4 py-1 text-[13px] font-semibold rounded-lg shadow-2xs transition cursor-pointer",
-              isModified
+              "flex items-center gap-1.5 px-4 py-1 text-[13px] font-semibold rounded-lg shadow-2xs transition cursor-pointer",
+              isModified && !isSaving
                 ? "bg-[#1a1a1a] hover:bg-[#303030] text-white"
                 : "bg-[#e4e5e7] text-[#8a8a8a] cursor-not-allowed"
             )}
           >
-            Save
+            {isSaving && (
+              <div className="w-3 h-3 border-2 border-[#8a8a8a] border-t-[#1a1a1a] rounded-full animate-spin" />
+            )}
+            <span>{isSaving ? "Saving..." : "Save"}</span>
           </button>
         </div>
       </header>
 
       {/* Main Bulk Editor Spreadsheet Grid Container */}
       <main ref={mainRef} className="flex-1 min-h-0 w-full overflow-x-auto overflow-y-auto bulk-editor-scroll bg-white">
-        <table 
-          className="border-collapse text-[13px] text-left border-b border-[#e1e3e5]"
-          style={{ width: "max-content", minWidth: "100%" }}
-        >
-          <thead className="sticky top-0 z-20">
-            <tr className="bg-[#f7f7f7] border-b border-[#e1e3e5] h-[38px] text-[12.5px] font-medium text-[#616161] select-none">
-              {allColumnFields.map((field) => {
-                if (field.key !== "title" && !activeColumns.has(field.key)) return null;
-
-                if (field.key === "title") {
-                  return (
-                    <th
-                      key={field.key}
-                      className="px-4 py-2 font-medium text-[#616161] min-w-[280px] w-[280px] border-r border-[#e1e3e5] sticky left-0 bg-[#f7f7f7] z-30 shadow-[2px_0_5px_rgba(0,0,0,0.03)]"
-                    >
-                      Product title
-                    </th>
-                  );
-                }
-
-                return (
-                  <th
-                    key={field.key}
-                    className="px-3 py-2 font-medium text-[#616161] min-w-[200px] w-[200px] border-r border-[#e1e3e5] whitespace-nowrap bg-[#f7f7f7]"
-                  >
-                    <div className="flex items-center gap-1">
-                      <span>{field.label}</span>
-                      {(field.key === "category" || field.key === "available") && (
-                        <HelpCircle className="w-3.5 h-3.5 text-[#8a8a8a]" />
-                      )}
-                      {field.key === "price" && (
-                        <span className="text-[11px] text-[#8a8a8a] uppercase font-bold ml-auto">LKR</span>
-                      )}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-
-          <tbody>
-            {products.map((product, productIdx) => (
-              <tr
-                key={product.id}
-                className="border-b border-[#e1e3e5] h-[36px] hover:bg-[#fafafa] transition"
-              >
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-3 text-[#616161]">
+            <div className="w-8 h-8 border-2 border-[#005bd3] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[13px] font-medium text-[#303030]">Loading selected products...</p>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full min-h-[350px] gap-4 text-center px-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#f4f6f8] border border-[#e1e3e5] flex items-center justify-center text-[#616161]">
+              <Columns className="w-7 h-7 text-[#8a8a8a]" />
+            </div>
+            <div className="max-w-md">
+              <h2 className="text-[16px] font-semibold text-[#1a1a1a] mb-1">No products found to edit</h2>
+              <p className="text-[13px] text-[#616161]">
+                {idsParam
+                  ? "None of the selected product IDs were found in your store database."
+                  : "No products exist in your store database yet."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push(isInventoryMode ? "/admin/products/inventory" : "/admin/products")}
+              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#303030] text-white rounded-xl text-[13px] font-semibold transition cursor-pointer shadow-2xs"
+            >
+              Return to {isInventoryMode ? "Inventory" : "Products"}
+            </button>
+          </div>
+        ) : (
+          <table 
+            className="border-collapse text-[13px] text-left border-b border-[#e1e3e5]"
+            style={{ width: "max-content", minWidth: "100%" }}
+          >
+            <thead className="sticky top-0 z-20">
+              <tr className="bg-[#f7f7f7] border-b border-[#e1e3e5] h-[38px] text-[12.5px] font-medium text-[#616161] select-none">
                 {allColumnFields.map((field) => {
                   if (field.key !== "title" && !activeColumns.has(field.key)) return null;
 
-                  const fieldIdx = activeFieldsList.findIndex((f) => f.key === field.key);
-
-                  // Calculate if cell is in Vertical-Only Column Drag Selection
-                  const isInFillSelection = isDraggingFill && fillStartCell && fillCurrentCell && (
-                    fillStartCell.field === field.key &&
-                    productIdx >= Math.min(fillStartCell.rowIdx, fillCurrentCell.rowIdx) &&
-                    productIdx <= Math.max(fillStartCell.rowIdx, fillCurrentCell.rowIdx) &&
-                    field.key !== "title"
-                  );
-
-                  // Product Title Cell (Mandatory)
                   if (field.key === "title") {
-                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
                     return (
-                      <td
+                      <th
                         key={field.key}
-                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                        className={cn(
-                          "px-3 py-1 border-r border-[#e1e3e5] align-middle bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.03)] cursor-pointer select-none transition",
-                          isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-[#f4f6f8]"
-                        )}
+                        className="px-4 py-2 font-medium text-[#616161] min-w-[280px] w-[280px] border-r border-[#e1e3e5] sticky left-0 bg-[#f7f7f7] z-30 shadow-[2px_0_5px_rgba(0,0,0,0.03)]"
                       >
-                        <div className="flex items-center gap-2.5 min-w-[240px]">
-                          <div className="w-6 h-6 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0">
-                            <div className="w-full h-full bg-gradient-to-tr from-blue-300 to-green-300 rounded" />
-                          </div>
-                          <span className="font-semibold text-[#1a1a1a] truncate" title={product.name}>
-                            {product.name}
-                          </span>
-                        </div>
-                      </td>
+                        Product title
+                      </th>
                     );
                   }
-
-                  // Product Media Cell
-                  if (field.key === "media") {
-                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
-                    return (
-                      <td
-                        key={field.key}
-                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                        onMouseEnter={() => {
-                          if (isDraggingFill) {
-                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                          }
-                        }}
-                        className={cn(
-                          "p-0 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] cursor-pointer transition relative h-[36px]",
-                          isInFillSelection
-                            ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
-                            : isFocused
-                            ? "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-[#f4f6f8] z-10"
-                            : "hover:bg-[#fafafa]"
-                        )}
-                      >
-                        <MediaCellPopover
-                          productName={product.name}
-                          hasImage={product.hasImage}
-                          onOpenSelectFileModal={() => {
-                            setActiveMediaProductId(product.id);
-                            setIsSelectFileModalOpen(true);
-                          }}
-                        />
-
-                        {/* Drag Fill Handle */}
-                        {isFocused && (
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDraggingFill(true);
-                              setFillStartCell({
-                                rowIdx: productIdx,
-                                colIdx: fieldIdx,
-                                id: product.id,
-                                field: field.key,
-                                value: product.media || "",
-                              });
-                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                            }}
-                            className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
-                            title="Drag down to copy value to column rows"
-                          />
-                        )}
-                      </td>
-                    );
-                  }
-
-                  // Status Dropdown Cell
-                  if (field.key === "status") {
-                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
-                    return (
-                      <td
-                        key={field.key}
-                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                        onMouseEnter={() => {
-                          if (isDraggingFill) {
-                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                          }
-                        }}
-                        className={cn(
-                          "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[170px] w-[170px] relative cursor-pointer",
-                          isInFillSelection
-                            ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
-                            : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
-                        )}
-                      >
-                        <StatusCell
-                          status={product.status}
-                          onChange={(newStatus) => handleCellChange(product.id, "status", newStatus)}
-                        />
-
-                        {/* Drag Fill Handle */}
-                        {isFocused && (
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDraggingFill(true);
-                              setFillStartCell({
-                                rowIdx: productIdx,
-                                colIdx: fieldIdx,
-                                id: product.id,
-                                field: field.key,
-                                value: product.status,
-                              });
-                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                            }}
-                            className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
-                            title="Drag down to copy value to column rows"
-                          />
-                        )}
-                      </td>
-                    );
-                  }
-
-                  // Product Category Dropdown Cell
-                  if (field.key === "category") {
-                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
-                    return (
-                      <td
-                        key={field.key}
-                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                        onMouseEnter={() => {
-                          if (isDraggingFill) {
-                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                          }
-                        }}
-                        className={cn(
-                          "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] relative cursor-pointer",
-                          isInFillSelection
-                            ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
-                            : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
-                        )}
-                      >
-                        <div className="relative flex items-center">
-                          <select
-                            value={product.category || "Uncategorized"}
-                            onChange={(e) => handleCellChange(product.id, "category", e.target.value)}
-                            className="w-full appearance-none bg-transparent outline-none cursor-pointer px-2 py-1 text-[13px] text-[#303030] hover:bg-[#f1f2f4] rounded transition"
-                          >
-                            <option value="Uncategorized">Uncategorized</option>
-                            <option value="Print Books">Print Books</option>
-                            <option value="Textbooks">Textbooks</option>
-                            <option value="Workbook">Workbook</option>
-                            <option value="General">General</option>
-                          </select>
-                          <ChevronDown className="w-3 h-3 text-[#616161] absolute right-2 pointer-events-none" />
-                        </div>
-
-                        {/* Drag Fill Handle */}
-                        {isFocused && (
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDraggingFill(true);
-                              setFillStartCell({
-                                rowIdx: productIdx,
-                                colIdx: fieldIdx,
-                                id: product.id,
-                                field: field.key,
-                                value: product.category || "Uncategorized",
-                              });
-                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                            }}
-                            className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
-                            title="Drag down to copy value to column rows"
-                          />
-                        )}
-                      </td>
-                    );
-                  }
-
-                  // Vendor Dropdown Cell
-                  if (field.key === "vendor") {
-                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
-                    return (
-                      <td
-                        key={field.key}
-                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                        onMouseEnter={() => {
-                          if (isDraggingFill) {
-                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                          }
-                        }}
-                        className={cn(
-                          "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] relative cursor-pointer",
-                          isInFillSelection
-                            ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
-                            : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
-                        )}
-                      >
-                        <div className="relative flex items-center">
-                          <select
-                            value={product.vendor || "Learnix LK"}
-                            onChange={(e) => handleCellChange(product.id, "vendor", e.target.value)}
-                            className="w-full appearance-none bg-transparent outline-none cursor-pointer px-2 py-1 text-[13px] text-[#303030] hover:bg-[#f1f2f4] rounded transition"
-                          >
-                            <option value="Learnix LK">Learnix LK</option>
-                            <option value="Oxford Press">Oxford Press</option>
-                            <option value="Pearson">Pearson</option>
-                            <option value="Cambridge">Cambridge</option>
-                            <option value="Hodder Children">Hodder Children</option>
-                          </select>
-                          <ChevronDown className="w-3 h-3 text-[#616161] absolute right-2 pointer-events-none" />
-                        </div>
-
-                        {/* Drag Fill Handle */}
-                        {isFocused && (
-                          <div
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDraggingFill(true);
-                              setFillStartCell({
-                                rowIdx: productIdx,
-                                colIdx: fieldIdx,
-                                id: product.id,
-                                field: field.key,
-                                value: product.vendor || "Learnix LK",
-                              });
-                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                            }}
-                            className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
-                            title="Drag down to copy value to column rows"
-                          />
-                        )}
-                      </td>
-                    );
-                  }
-
-                  // Standard Text / Number Cells
-                  const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
-                  const isEditing = editingCell?.id === product.id && editingCell?.field === field.key;
-                  const cellVal = (product as Record<string, any>)[field.key] || "";
 
                   return (
-                    <td
+                    <th
                       key={field.key}
-                      onClick={() => setFocusedCell({ id: product.id, field: field.key })}
-                      onDoubleClick={() => setEditingCell({ id: product.id, field: field.key })}
-                      onMouseEnter={() => {
-                        if (isDraggingFill) {
-                          setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                        }
-                      }}
-                      className={cn(
-                        "p-0 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] select-none cursor-pointer transition relative h-[36px]",
-                        isInFillSelection
-                          ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
-                          : isFocused || isEditing
-                          ? "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
-                          : "hover:bg-[#fafafa]"
-                      )}
+                      className="px-3 py-2 font-medium text-[#616161] min-w-[200px] w-[200px] border-r border-[#e1e3e5] whitespace-nowrap bg-[#f7f7f7]"
                     >
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={cellVal}
-                          onChange={(e) => handleCellChange(product.id, field.key, e.target.value)}
-                          onBlur={() => setEditingCell(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") setEditingCell(null);
-                          }}
-                          className="w-full h-full border-none outline-none ring-0 bg-transparent px-3 py-1.5 text-[13px] text-[#1a1a1a]"
-                        />
-                      ) : (
-                        <div className="px-3 py-1.5 truncate text-[13px] text-[#1a1a1a] h-full flex items-center">
-                          {cellVal || <span className="text-[#a1a1a1] italic text-[12px]">&mdash;</span>}
-                        </div>
-                      )}
-
-                      {/* Drag Fill Handle */}
-                      {isFocused && !isEditing && (
-                        <div
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setIsDraggingFill(true);
-                            setFillStartCell({
-                              rowIdx: productIdx,
-                              colIdx: fieldIdx,
-                              id: product.id,
-                              field: field.key,
-                              value: cellVal,
-                            });
-                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
-                          }}
-                          className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
-                          title="Drag down to copy value to column rows"
-                        />
-                      )}
-                    </td>
+                      <div className="flex items-center gap-1">
+                        <span>{field.label}</span>
+                        {(field.key === "category" || field.key === "type" || field.key === "available") && (
+                          <HelpCircle className="w-3.5 h-3.5 text-[#8a8a8a]" />
+                        )}
+                        {field.key === "price" && (
+                          <span className="text-[11px] text-[#8a8a8a] uppercase font-bold ml-auto">LKR</span>
+                        )}
+                      </div>
+                    </th>
                   );
                 })}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {products.map((product, productIdx) => (
+                <tr
+                  key={product.id}
+                  className="border-b border-[#e1e3e5] h-[36px] hover:bg-[#fafafa] transition"
+                >
+                  {allColumnFields.map((field) => {
+                    if (field.key !== "title" && !activeColumns.has(field.key)) return null;
+
+                    const fieldIdx = activeFieldsList.findIndex((f) => f.key === field.key);
+
+                    // Calculate if cell is in Vertical-Only Column Drag Selection
+                    const isInFillSelection = isDraggingFill && fillStartCell && fillCurrentCell && (
+                      fillStartCell.field === field.key &&
+                      productIdx >= Math.min(fillStartCell.rowIdx, fillCurrentCell.rowIdx) &&
+                      productIdx <= Math.max(fillStartCell.rowIdx, fillCurrentCell.rowIdx) &&
+                      field.key !== "title"
+                    );
+
+                    // Product Title Cell (Mandatory)
+                    if (field.key === "title") {
+                      const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                      const isEditing = editingCell?.id === product.id && editingCell?.field === field.key;
+                      return (
+                        <td
+                          key={field.key}
+                          onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                          onDoubleClick={() => setEditingCell({ id: product.id, field: field.key })}
+                          className={cn(
+                            "px-3 py-1 border-r border-[#e1e3e5] align-middle bg-white sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.03)] cursor-pointer select-none transition",
+                            (isFocused || isEditing) && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-[#f4f6f8]"
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-[280px]">
+                            <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+                              {product.imageSrc ? (
+                                <img src={product.imageSrc} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-tr from-blue-100 to-indigo-100 flex items-center justify-center text-[10px] font-bold text-gray-700">
+                                  {product.name?.charAt(0) || "P"}
+                                </div>
+                              )}
+                            </div>
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                autoFocus
+                                value={product.name}
+                                onChange={(e) => handleCellChange(product.id, "title", e.target.value)}
+                                onBlur={() => setEditingCell(null)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") setEditingCell(null);
+                                }}
+                                className="w-full border-none outline-none ring-0 bg-transparent text-[13px] font-semibold text-[#1a1a1a]"
+                              />
+                            ) : (
+                              <span className="font-semibold text-[#1a1a1a] truncate" title={product.name}>
+                                {product.name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    }
+
+                    // Product Media Cell
+                    if (field.key === "media") {
+                      const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                      return (
+                        <td
+                          key={field.key}
+                          onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                          onMouseEnter={() => {
+                            if (isDraggingFill) {
+                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                            }
+                          }}
+                          className={cn(
+                            "p-0 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] cursor-pointer transition relative h-[36px]",
+                            isInFillSelection
+                              ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
+                              : isFocused
+                              ? "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-[#f4f6f8] z-10"
+                              : "hover:bg-[#fafafa]"
+                          )}
+                        >
+                          <MediaCellPopover
+                            productName={product.name}
+                            hasImage={product.hasImage}
+                            imageSrc={product.imageSrc}
+                            onOpenSelectFileModal={() => {
+                              setActiveMediaProductId(product.id);
+                              setIsSelectFileModalOpen(true);
+                            }}
+                          />
+
+                          {/* Drag Fill Handle */}
+                          {isFocused && (
+                            <div
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsDraggingFill(true);
+                                setFillStartCell({
+                                  rowIdx: productIdx,
+                                  colIdx: fieldIdx,
+                                  id: product.id,
+                                  field: field.key,
+                                  value: product.media || "",
+                                });
+                                setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                              }}
+                              className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
+                              title="Drag down to copy value to column rows"
+                            />
+                          )}
+                        </td>
+                      );
+                    }
+
+                    // Status Dropdown Cell
+                    if (field.key === "status") {
+                      const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                      return (
+                        <td
+                          key={field.key}
+                          onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                          onMouseEnter={() => {
+                            if (isDraggingFill) {
+                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                            }
+                          }}
+                          className={cn(
+                            "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[170px] w-[170px] relative cursor-pointer",
+                            isInFillSelection
+                              ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
+                              : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
+                          )}
+                        >
+                          <StatusCell
+                            status={product.status}
+                            onChange={(newStatus) => handleCellChange(product.id, "status", newStatus)}
+                          />
+
+                          {/* Drag Fill Handle */}
+                          {isFocused && (
+                            <div
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsDraggingFill(true);
+                                setFillStartCell({
+                                  rowIdx: productIdx,
+                                  colIdx: fieldIdx,
+                                  id: product.id,
+                                  field: field.key,
+                                  value: product.status,
+                                });
+                                setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                              }}
+                              className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
+                              title="Drag down to copy value to column rows"
+                            />
+                          )}
+                        </td>
+                      );
+                    }
+
+                    // Product Category / Type Dropdown Cell
+                    if (field.key === "category" || field.key === "type") {
+                      const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                      const currentCategory = product.category || product.type || availableCategories[0] || "General";
+                      return (
+                        <td
+                          key={field.key}
+                          onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                          onMouseEnter={() => {
+                            if (isDraggingFill) {
+                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                            }
+                          }}
+                          className={cn(
+                            "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] relative cursor-pointer",
+                            isInFillSelection
+                              ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
+                              : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
+                          )}
+                        >
+                          <div className="relative flex items-center">
+                            <select
+                              value={currentCategory}
+                              onChange={(e) => handleCellChange(product.id, field.key, e.target.value)}
+                              className="w-full appearance-none bg-transparent outline-none cursor-pointer px-2 py-1 text-[13px] text-[#303030] hover:bg-[#f1f2f4] rounded transition"
+                            >
+                              {availableCategories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                              {product.category && !availableCategories.includes(product.category) && (
+                                <option value={product.category}>{product.category}</option>
+                              )}
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-[#616161] absolute right-2 pointer-events-none" />
+                          </div>
+
+                          {/* Drag Fill Handle */}
+                          {isFocused && (
+                            <div
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsDraggingFill(true);
+                                setFillStartCell({
+                                  rowIdx: productIdx,
+                                  colIdx: fieldIdx,
+                                  id: product.id,
+                                  field: field.key,
+                                  value: currentCategory,
+                                });
+                                setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                              }}
+                              className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
+                              title="Drag down to copy value to column rows"
+                            />
+                          )}
+                        </td>
+                      );
+                    }
+
+                    // Vendor Dropdown Cell
+                    if (field.key === "vendor") {
+                      const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                      const currentVendor = product.vendor || availableVendors[0] || "Prasanthi Craft";
+                      return (
+                        <td
+                          key={field.key}
+                          onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                          onMouseEnter={() => {
+                            if (isDraggingFill) {
+                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                            }
+                          }}
+                          className={cn(
+                            "px-2 py-1 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] relative cursor-pointer",
+                            isInFillSelection
+                              ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
+                              : isFocused && "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
+                          )}
+                        >
+                          <div className="relative flex items-center">
+                            <select
+                              value={currentVendor}
+                              onChange={(e) => handleCellChange(product.id, "vendor", e.target.value)}
+                              className="w-full appearance-none bg-transparent outline-none cursor-pointer px-2 py-1 text-[13px] text-[#303030] hover:bg-[#f1f2f4] rounded transition"
+                            >
+                              {availableVendors.map((ven) => (
+                                <option key={ven} value={ven}>
+                                  {ven}
+                                </option>
+                              ))}
+                              {product.vendor && !availableVendors.includes(product.vendor) && (
+                                <option value={product.vendor}>{product.vendor}</option>
+                              )}
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-[#616161] absolute right-2 pointer-events-none" />
+                          </div>
+
+                          {/* Drag Fill Handle */}
+                          {isFocused && (
+                            <div
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setIsDraggingFill(true);
+                                setFillStartCell({
+                                  rowIdx: productIdx,
+                                  colIdx: fieldIdx,
+                                  id: product.id,
+                                  field: field.key,
+                                  value: currentVendor,
+                                });
+                                setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                              }}
+                              className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
+                              title="Drag down to copy value to column rows"
+                            />
+                          )}
+                        </td>
+                      );
+                    }
+
+                    // Standard Text / Number Cells
+                    const isFocused = focusedCell?.id === product.id && focusedCell?.field === field.key;
+                    const isEditing = editingCell?.id === product.id && editingCell?.field === field.key;
+                    const cellVal = (product as Record<string, any>)[field.key] || "";
+
+                    return (
+                      <td
+                        key={field.key}
+                        onClick={() => setFocusedCell({ id: product.id, field: field.key })}
+                        onDoubleClick={() => setEditingCell({ id: product.id, field: field.key })}
+                        onMouseEnter={() => {
+                          if (isDraggingFill) {
+                            setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                          }
+                        }}
+                        className={cn(
+                          "p-0 border-r border-[#e1e3e5] align-middle min-w-[200px] w-[200px] select-none cursor-pointer transition relative h-[36px]",
+                          isInFillSelection
+                            ? "bg-[#005bd3]/10 border-2 border-dashed border-[#005bd3] z-20"
+                            : isFocused || isEditing
+                            ? "outline outline-2 outline-[#005bd3] outline-offset-[-2px] bg-white z-10"
+                            : "hover:bg-[#fafafa]"
+                        )}
+                      >
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            value={cellVal}
+                            onChange={(e) => handleCellChange(product.id, field.key, e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") setEditingCell(null);
+                            }}
+                            className="w-full h-full border-none outline-none ring-0 bg-transparent px-3 py-1.5 text-[13px] text-[#1a1a1a]"
+                          />
+                        ) : (
+                          <div className="px-3 py-1.5 truncate text-[13px] text-[#1a1a1a] h-full flex items-center">
+                            {cellVal || <span className="text-[#a1a1a1] italic text-[12px]">&mdash;</span>}
+                          </div>
+                        )}
+
+                        {/* Drag Fill Handle */}
+                        {isFocused && !isEditing && (
+                          <div
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDraggingFill(true);
+                              setFillStartCell({
+                                rowIdx: productIdx,
+                                colIdx: fieldIdx,
+                                id: product.id,
+                                field: field.key,
+                                value: cellVal,
+                              });
+                              setFillCurrentCell({ rowIdx: productIdx, colIdx: fieldIdx });
+                            }}
+                            className="absolute -bottom-[3px] -right-[3px] w-[7px] h-[7px] bg-[#005bd3] border border-white cursor-s-resize z-30 shadow-2xs hover:scale-125 transition-transform"
+                            title="Drag down to copy value to column rows"
+                          />
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </main>
 
       {/* Leave Page Confirmation Modal matching Screenshot 2 */}

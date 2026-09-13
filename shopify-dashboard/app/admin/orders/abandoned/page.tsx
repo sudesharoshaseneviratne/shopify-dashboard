@@ -30,7 +30,7 @@ const initialCheckouts = [
   { id: "#39007857574130", date: "Jul 24 at 10:29 pm", customer: "Alex Johnson", status: "Not recovered", statusType: "warning", total: "Rs 8,400.00" },
   { id: "#38797012074738", date: "Jul 3 at 4:48 pm", customer: "Victoria Bloom", status: "Not recovered", statusType: "warning", total: "Rs 3,400.00" },
   { id: "#38709651886914", date: "Jun 22 at 7:53 pm", customer: "Ethan Williams", status: "Not recovered", statusType: "warning", total: "Rs 300.00" },
-  { id: "#38558530975474", date: "May 25 at 6:55 pm", customer: "learnix.lk@ilovemyemail.net", status: "Not recovered", statusType: "warning", total: "Rs 4,580.00" },
+  { id: "#38558530975474", date: "May 25 at 6:55 pm", customer: "prasanthicraft@ilovemyemail.net", status: "Not recovered", statusType: "warning", total: "Rs 4,580.00" },
 ];
 
 const categoryOptionsMap: Record<string, string[]> = {

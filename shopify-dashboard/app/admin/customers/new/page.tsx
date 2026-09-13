@@ -13,9 +13,12 @@ import {
 import { PersonIcon } from "@shopify/polaris-icons";
 import { CountryPhoneInput } from "@/components/admin/CountryPhoneInput";
 import { cn } from "@/lib/utils";
+import { createAdminCustomerAction } from "@/app/actions/customers";
 
 export default function NewCustomerPage() {
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Form State
   const [firstName, setFirstName] = useState("");
@@ -57,6 +60,39 @@ export default function NewCustomerPage() {
     setIsAddAddressModalOpen(false);
   };
 
+  const handleSaveCustomer = async () => {
+    if (!firstName && !lastName) {
+      setErrorMessage("Please enter at least a first or last name.");
+      return;
+    }
+    if (!email || !email.includes("@")) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    const res = await createAdminCustomerAction({
+      firstName,
+      lastName,
+      email,
+      phone: phone || addrPhone,
+      location: savedAddress || addrCity ? `${addrCity}, Sri Lanka` : "Sri Lanka",
+      notes,
+      tags,
+      agreeEmailMarketing,
+    });
+
+    setIsSaving(false);
+
+    if (res.success) {
+      router.push("/admin/customers");
+    } else {
+      setErrorMessage(res.error || "Failed to create customer.");
+    }
+  };
+
   return (
     <div className="space-y-4 font-sans pb-16 max-w-[960px] mx-auto">
       {/* Header Breadcrumb & Title */}
@@ -72,7 +108,29 @@ export default function NewCustomerPage() {
           <span className="text-[#616161] text-[15px] font-normal leading-none">›</span>
           <h1 className="text-[18px] font-bold text-[#1a1a1a]">New customer</h1>
         </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/customers"
+            className="px-3 py-1.5 text-[13px] font-medium text-[#303030] bg-white border border-[#c9cccf] hover:bg-[#f6f6f7] rounded-md transition shadow-2xs"
+          >
+            Discard
+          </Link>
+          <button
+            onClick={handleSaveCustomer}
+            disabled={isSaving}
+            className="px-4 py-1.5 text-[13px] font-semibold text-white bg-[#1a1a1a] hover:bg-[#303030] rounded-md transition shadow-2xs disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {isSaving ? "Saving..." : "Save customer"}
+          </button>
+        </div>
       </div>
+
+      {errorMessage && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-[13px] rounded-lg">
+          {errorMessage}
+        </div>
+      )}
 
       {/* Main Two-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

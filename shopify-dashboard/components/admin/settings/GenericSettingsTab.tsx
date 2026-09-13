@@ -107,8 +107,8 @@ export function GenericSettingsTab({ tab }: GenericSettingsTabProps) {
               content: (
                 <div className="p-3.5 border border-[#e1e3e5] rounded-xl flex items-center justify-between bg-[#fafafa]">
                   <div>
-                    <div className="text-[13px] font-semibold text-[#1a1a1a]">Learnix LK (You)</div>
-                    <div className="text-[12px] text-[#616161]">learnixlk@gmail.com · Full access</div>
+                    <div className="text-[13px] font-semibold text-[#1a1a1a]">Prasanthi Craft (You)</div>
+                    <div className="text-[12px] text-[#616161]">prasanthicrafts@gmail.com · Full access</div>
                   </div>
                   <span className="text-[12px] font-medium text-[#616161] bg-[#e4e5e7] px-2.5 py-0.5 rounded-full">Owner</span>
                 </div>
@@ -137,7 +137,7 @@ export function GenericSettingsTab({ tab }: GenericSettingsTabProps) {
                   <div className="p-3.5 border border-[#e1e3e5] rounded-xl flex items-center justify-between">
                     <div>
                       <div className="text-[13px] font-semibold text-[#1a1a1a]">PayPal Express Checkout</div>
-                      <div className="text-[12px] text-[#616161]">Connected account: learnixlk@gmail.com</div>
+                      <div className="text-[12px] text-[#616161]">Connected account: prasanthicrafts@gmail.com</div>
                     </div>
                     <button onClick={handleAction} className="px-3 py-1 text-[12px] font-medium border border-[#c9cccf] rounded-md">Manage</button>
                   </div>
@@ -183,7 +183,7 @@ export function GenericSettingsTab({ tab }: GenericSettingsTabProps) {
                 <div className="p-3.5 border border-[#e1e3e5] rounded-xl flex items-center justify-between">
                   <div>
                     <div className="text-[13px] font-semibold text-[#1a1a1a]">Domestic (Sri Lanka)</div>
-                    <div className="text-[12px] text-[#616161]">Flat Shipping Rate: Rs 400.00</div>
+                    <div className="text-[12px] text-[#616161]">Flat Shipping Rate: LKR 400.00</div>
                   </div>
                   <button onClick={handleAction} className="text-[13px] text-[#005bd3] font-medium hover:underline">Manage</button>
                 </div>

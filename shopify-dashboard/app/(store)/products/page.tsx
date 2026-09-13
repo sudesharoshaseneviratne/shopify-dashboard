@@ -4,8 +4,8 @@ import { ProductsCatalogClient } from "./ProductsCatalogClient";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Protocol Hardware Catalog | Satoshi DeFi",
-  description: "Browse mathematical cold storage keys, ultra-silent residential hydro miners, dedicated sovereign nodes, and indestructible seed vaults.",
+  title: "Store Products Catalog | Prasanthi Craft",
+  description: "Browse educational textbooks, syllabus workbooks, premium stationery instruments, and smart student tech.",
 };
 
 export const dynamic = "force-dynamic";

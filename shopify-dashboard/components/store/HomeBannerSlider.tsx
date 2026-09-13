@@ -21,40 +21,40 @@ export function HomeBannerSlider() {
   const slides: ImageBannerSlide[] = [
     {
       id: "banner-1",
-      href: "/store/products",
-      alt: "Satoshi ColdKey Prime Hardware Signer Promotion",
+      href: "/products",
+      alt: "Curated Educational Textbooks and Workbooks",
       bgGradient: "from-amber-400 via-amber-300 to-yellow-200",
-      badgeTag: "COLDKEY MK-IV // BIP-174 AIR-GAPPED",
-      symbol: "🔐",
-      accentTitle: "AIR-GAPPED VAULT"
+      badgeTag: "PRASANTHI CRAFT ESSENTIALS // GRADE 1-12 BOOKS",
+      symbol: "📚",
+      accentTitle: "EDUCATIONAL BOOKS",
     },
     {
       id: "banner-2",
-      href: "/store/products",
-      alt: "Orion Hydro-ASIC Ultra Silent Home Mining",
+      href: "/products",
+      alt: "Next-Gen Smart Tech and Wireless Peripherals",
       bgGradient: "from-amber-300 via-yellow-200 to-amber-100",
-      badgeTag: "ORION HYDRO-ASIC // 140 TH/s <38dB",
+      badgeTag: "SMART GADGETS // LATEST RELEASES",
       symbol: "⚡",
-      accentTitle: "LIQUID COOLED MINING"
+      accentTitle: "TECH & ACCESSORIES",
     },
     {
       id: "banner-3",
-      href: "/store/products",
-      alt: "Sovereign ZK-Node X1 Bitcoin Core Appliance",
+      href: "/products",
+      alt: "Fine Writing Stationery and Office Sets",
       bgGradient: "from-yellow-300 via-amber-200 to-yellow-100",
-      badgeTag: "SOVEREIGN ZK-NODE // 4TB NVMe SSD",
-      symbol: "🌐",
-      accentTitle: "BITCOIN CORE + LIGHTNING"
+      badgeTag: "OFFICE ESSENTIALS // FINE STATIONERY",
+      symbol: "✏️",
+      accentTitle: "DESK & STATIONERY",
     },
     {
       id: "banner-4",
-      href: "/store/products",
-      alt: "Genesis 24K Gold Ingot Proof Bar",
+      href: "/products",
+      alt: "Special Promotional Discounts Storewide",
       bgGradient: "from-amber-400 via-yellow-300 to-amber-200",
-      badgeTag: "GENESIS GOLD // 21,000 SATS INSCRIBED",
-      symbol: "🥇",
-      accentTitle: "24K .9999 PROOF BAR"
-    }
+      badgeTag: "SEASONAL SAVINGS // UP TO 25% OFF",
+      symbol: "🏷️",
+      accentTitle: "STOREWIDE OFFERS",
+    },
   ];
 
   // Auto slide advance timer

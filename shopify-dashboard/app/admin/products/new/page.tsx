@@ -39,13 +39,13 @@ export default function AddProductPage() {
   // Main Form States
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("Cold Storage");
+  const [category, setCategory] = useState("Books & Workbooks");
   const [availableCollections, setAvailableCollections] = useState<string[]>([
-    "Cold Storage",
-    "Mining & ASICs",
-    "Sovereign Nodes",
-    "Cryptographic Relics",
-    "Security & Backup"
+    "Books & Workbooks",
+    "Tech & Electronics",
+    "Stationery & Office",
+    "School Essentials",
+    "Novelties & Gifts"
   ]);
 
   useEffect(() => {
@@ -167,7 +167,7 @@ export default function AddProductPage() {
 
       const parsedPrice = parseFloat(price.replace(/[^0-9.]/g, "")) || 0;
       const parsedQty = parseInt(quantity, 10) || 0;
-      const cleanCategory = category !== "Choose a product category" ? category : "Cold Storage";
+      const cleanCategory = category !== "Choose a product category" ? category : "Books & Workbooks";
 
       const res = await createProductAction({
         name: title.trim(),
@@ -377,16 +377,16 @@ export default function AddProductPage() {
                 className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white text-[#303030] cursor-pointer"
               >
                 <option>Choose a product category</option>
-                <option>Cold Storage</option>
-                <option>Mining & ASICs</option>
-                <option>Sovereign Nodes</option>
-                <option>Security & Backup</option>
-                <option>Cryptographic Relics</option>
+                <option>Books & Workbooks</option>
+                <option>Tech & Electronics</option>
+                <option>Stationery & Office</option>
+                <option>School Essentials</option>
+                <option>Novelties & Gifts</option>
               </select>
               <ChevronDown className="w-4 h-4 text-[#616161] absolute right-3 top-2.5 pointer-events-none" />
             </div>
             <p className="text-[12px] text-[#616161] pt-0.5">
-              Determines cryptographic tagging, storefront placement, and filter catalog index
+              Determines product category, storefront placement, and filter catalog index
             </p>
           </div>
 
@@ -396,12 +396,12 @@ export default function AddProductPage() {
 
             <div className="space-y-1">
               <div className="relative max-w-[220px]">
-                <span className="absolute left-3.5 top-2 text-[13px] text-[#616161] font-medium">Rs</span>
+                <span className="absolute left-3 top-2 text-[12px] text-[#616161] font-medium">LKR</span>
                 <input
                   type="text"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-10 pr-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white font-medium text-[#1a1a1a]"
+                  className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3.5 py-2 outline-none focus:border-[#005bd3] focus:ring-2 focus:ring-[#005bd3]/20 bg-white font-medium text-[#1a1a1a]"
                 />
               </div>
             </div>
@@ -484,13 +484,13 @@ export default function AddProductPage() {
                     <HelpCircle className="w-3.5 h-3.5 text-[#616161]" />
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <span className="absolute left-3 top-2 text-[12px] text-[#616161] font-medium">LKR</span>
                     <input
                       type="text"
                       value={compareAtPrice}
                       onChange={(e) => setCompareAtPrice(e.target.value)}
                       placeholder="0.00"
-                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
                     />
                   </div>
                 </div>
@@ -498,13 +498,13 @@ export default function AddProductPage() {
                 <div className="space-y-1">
                   <label className="text-[12px] font-medium text-[#303030]">Unit price</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <span className="absolute left-3 top-2 text-[12px] text-[#616161] font-medium">LKR</span>
                     <input
                       type="text"
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(e.target.value)}
                       placeholder="0.00"
-                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
                     />
                   </div>
                 </div>
@@ -512,13 +512,13 @@ export default function AddProductPage() {
                 <div className="space-y-1">
                   <label className="text-[12px] font-medium text-[#303030]">Cost per item</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-[13px] text-[#616161]">Rs</span>
+                    <span className="absolute left-3 top-2 text-[12px] text-[#616161] font-medium">LKR</span>
                     <input
                       type="text"
                       value={costPerItem}
                       onChange={(e) => setCostPerItem(e.target.value)}
                       placeholder="0.00"
-                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-9 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-xl pl-12 pr-3 py-1.5 outline-none focus:border-[#005bd3] bg-white"
                     />
                   </div>
                 </div>
@@ -959,7 +959,7 @@ export default function AddProductPage() {
                   className="w-full appearance-none text-[13px] border border-[#c9cccf] rounded-xl px-3.5 py-2 outline-none focus:border-[#005bd3] bg-white text-[#303030] cursor-pointer"
                 >
                   <option>None</option>
-                  <option>Learnix LK</option>
+                  <option>Prasanthi Craft</option>
                   <option>Oxford Press</option>
                   <option>Pearson</option>
                 </select>

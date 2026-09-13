@@ -98,14 +98,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     } catch {
       // Fallback in case of network glitch
-      if (clean === "SATOSHI21" || clean === "HALVING" || clean === "BITCOIN") {
-        setDiscountCode(clean);
-        setDiscountPercent(21);
-        return true;
-      }
-      if (clean === "GENESIS10" || clean === "DISPATCH10" || clean === "VIP10") {
+      if (clean === "WELCOME10" || clean === "PRASANTHI10" || clean === "PROMO10") {
         setDiscountCode(clean);
         setDiscountPercent(10);
+        return true;
+      }
+      if (clean === "VIP20" || clean === "SUPER20" || clean === "SPECIAL20") {
+        setDiscountCode(clean);
+        setDiscountPercent(20);
         return true;
       }
     }
@@ -147,25 +147,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     ? subtotalUsd * (1 - discountPercent / 100)
     : subtotalUsd;
 
-  const totalSats = Math.round((totalUsd / BTC_USD_RATE) * 100_000_000);
-  const totalBtc = +(totalUsd / BTC_USD_RATE).toFixed(6);
+  const totalSats = 0;
+  const totalBtc = 0;
 
   const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const formatPrice = (amount: number, forceCurrency?: CurrencyMode): string => {
     const activeCurr = forceCurrency || currency;
-    if (activeCurr === "SATS") {
-      const sats = Math.round((amount / BTC_USD_RATE) * 100_000_000);
-      return `${sats.toLocaleString()} sats`;
-    }
-    if (activeCurr === "BTC") {
-      const btc = (amount / BTC_USD_RATE).toFixed(6);
-      return `₿ ${btc}`;
-    }
     if (activeCurr === "USD") {
-      return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+      return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-    return `LKR ${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    // LKR display
+    return `LKR ${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (

@@ -22,11 +22,14 @@ import {
   ArrowRight,
   ChevronRight,
   User,
-  LayoutDashboard,
-  Package
+  Package,
+  LogOut
 } from "lucide-react";
 import { useCart } from "@/lib/store/cartContext";
+import { useCustomerAuth } from "@/lib/store/customerAuthContext";
 import { LIVE_NETWORK_METRICS, STORE_PRODUCTS, type StoreCollection } from "@/lib/store/products";
+import { isShowcaseCollection, SHOWCASE_SECTIONS } from "@/lib/store/collections";
+import { searchStoreProductsAction, type SearchProductResult } from "@/app/actions/products";
 
 const ICON_MAP: Record<string, any> = {
   Shield,
@@ -55,29 +58,74 @@ export interface StoreNavbarProps {
 
 export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
   const router = useRouter();
-  const { totalItemsCount, setIsCartOpen, wishlist } = useCart();
+  const { totalItemsCount, setIsCartOpen, wishlist, formatPrice } = useCart();
+  const { customer, openAuthModal, logout } = useCustomerAuth();
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchProductResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
 
-  const hotline = settings?.supportPhone || "+9475 245 5812";
-  const marqueeText = settings?.marqueeAnnouncement || "USE VOUCHER CODE SATOSHI21 FOR 21% OFF";
+  const hotline = settings?.supportPhone || "+9477 423 0976";
+  const marqueeText = settings?.marqueeAnnouncement || "USE VOUCHER CODE WELCOME10 FOR 10% OFF";
 
-  // Close profile dropdown when clicking outside
+  // Debounced live database search
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchStoreProductsAction(q);
+        setSearchResults(results);
+        setIsSearchOpen(true);
+      } catch (err) {
+        console.error("Live database search failed:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close profile and search dropdowns when clicking outside or pressing Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
+        setIsProfileOpen(false);
+      }
+      const inDesktop = searchContainerRef.current?.contains(target);
+      const inMobile = mobileSearchContainerRef.current?.contains(target);
+      if (!inDesktop && !inMobile) {
+        setIsSearchOpen(false);
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsSearchOpen(false);
         setIsProfileOpen(false);
       }
     }
-    if (isProfileOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isProfileOpen]);
+  }, []);
 
   // Lock body scroll when category drawer is open
   useEffect(() => {
@@ -105,21 +153,24 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
   }, [categoryDrawerOpen]);
 
   const navLinks = [
-    { label: "HOME", href: "/store" },
-    { label: "CATEGORIES", href: "/store#categories" },
-    { label: "PRODUCTS", href: "/store/products" },
-    { label: "REVIEWS", href: "/store/reviews" },
-    { label: "ABOUT", href: "/store#about" },
-    { label: "CONTACT", href: "/store#faq" },
+    { label: "HOME", href: "/" },
+    { label: "CATEGORIES", href: "/#categories" },
+    { label: "PRODUCTS", href: "/products" },
+    { label: "REVIEWS", href: "/reviews" },
+    { label: "ABOUT", href: "/#about" },
+    { label: "CONTACT", href: "/#faq" },
   ];
 
   const categories = useMemo(() => {
-    if (collections && collections.length > 0) {
-      return collections.map((col) => ({
+    // Filter out the 4 homepage showcase collections so they are NOT in the category list
+    const productCollections = (collections || []).filter((c) => !isShowcaseCollection(c));
+
+    if (productCollections.length > 0) {
+      return productCollections.map((col) => ({
         name: col.title,
-        href: `/store/products?category=${encodeURIComponent(col.title)}`,
+        href: `/products?category=${encodeURIComponent(col.title)}`,
         icon: getIconForCollection(col.icon),
-        tagline: col.description || "Sovereign hardware protocol suite",
+        tagline: col.description || "Curated learning & lifestyle products",
         color: "#FFB800",
         count: col.productCount ?? 0,
       }));
@@ -127,62 +178,62 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
 
     return [
       {
-        name: "Cold Storage",
-        href: "/store/products?category=Cold%20Storage",
-        icon: Shield,
-        tagline: "Air-gapped hardware vaults & signers",
+        name: "Cake Toppers",
+        href: "/products?category=Cake%20Toppers",
+        icon: Layers,
+        tagline: "Custom & pre-cut celebration toppers",
         color: "#FFB800",
-        count: 2,
+        count: 25,
       },
       {
-        name: "Mining & ASICs",
-        href: "/store/products?category=Mining%20%26%20ASICs",
-        icon: Cpu,
-        tagline: "Ultra-silent liquid cooled home ASICs",
+        name: "Pipe cleaner products",
+        href: "/products?category=Pipe%20cleaner%20products",
+        icon: Package,
+        tagline: "Chenille stems & DIY craft supplies",
         color: "#EAB308",
-        count: 1,
+        count: 25,
       },
       {
-        name: "Sovereign Nodes",
-        href: "/store/products?category=Sovereign%20Nodes",
-        icon: Server,
-        tagline: "Dedicated Bitcoin Core & Lightning nodes",
-        color: "#D97706",
-        count: 2,
-      },
-      {
-        name: "Security & Backup",
-        href: "/store/products?category=Security%20%26%20Backup",
-        icon: Lock,
-        tagline: "Indestructible 316L stainless steel plates",
-        color: "#CA8A04",
-        count: 2,
-      },
-      {
-        name: "Cryptographic Relics",
-        href: "/store/products?category=Cryptographic%20Relics",
+        name: "Happy birthday",
+        href: "/products?category=Happy%20birthday",
         icon: Sparkles,
-        tagline: "Physical 24K gold timelocked sats proof bars",
+        tagline: "Birthday die cuts & decorations",
+        color: "#D97706",
+        count: 25,
+      },
+      {
+        name: "Valentine",
+        href: "/products?category=Valentine",
+        icon: Sparkles,
+        tagline: "Romantic cutouts & party decor",
+        color: "#CA8A04",
+        count: 25,
+      },
+      {
+        name: "Christmas",
+        href: "/products?category=Christmas",
+        icon: Layers,
+        tagline: "Holiday season crafting shapes",
         color: "#F59E0B",
-        count: 1,
+        count: 25,
       },
     ];
   }, [collections]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSearchOpen(false);
     if (searchQuery.trim()) {
-      router.push(`/store/products?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      router.push("/store/products");
+      router.push("/products");
     }
   };
 
   return (
     <>
-      {/* 1. Top E-Commerce Announcement Marquee Ribbon (At the top of the document) */}
-      <div className="w-full bg-slate-950 border-b border-slate-800 py-1.5 overflow-hidden relative text-white">
-        {/* Left & Right gradient edge fades */}
+      {/* 1. Global Announcement Marquee Bar */}
+      <div className="w-full bg-slate-950 text-white overflow-hidden py-2 border-b border-amber-500/20 relative z-30 select-none">
         <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-slate-950 to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-slate-950 to-transparent z-10 pointer-events-none" />
 
@@ -194,8 +245,8 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB800] opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFB800]"></span>
                 </span>
-                <span className="text-white font-semibold">MAINNET LIVE</span>
-                <span className="text-slate-400">BLOCK #{LIVE_NETWORK_METRICS.blockHeight}</span>
+                <span className="text-white font-semibold">STORE LIVE</span>
+                <span className="text-slate-400">ISLANDWIDE DELIVERY</span>
               </div>
 
               <span className="text-[#FFB800]">✦</span>
@@ -208,35 +259,28 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
               <span className="text-[#FFB800]">✦</span>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-white font-medium">FREE INSURED AIR-GAPPED SHIPPING OVER LKR 100,000</span>
+                <span className="text-white font-medium">FREE ISLANDWIDE SHIPPING ON ORDERS OVER LKR 5,000</span>
+              </div>
+
+              <span className="text-[#FFB800]">✦</span>
+
+              <div className="flex items-center gap-1.5 text-white">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>100% AUTHENTIC QUALITY GUARANTEED</span>
               </div>
 
               <span className="text-[#FFB800]">✦</span>
 
               <div className="flex items-center gap-1.5 text-white">
                 <Zap className="w-3.5 h-3.5 text-[#FFB800]" />
-                <span>BTC/USD: <strong className="text-[#FFD600]">${LIVE_NETWORK_METRICS.btcUsdPrice.toLocaleString()}</strong> ({LIVE_NETWORK_METRICS.priceChange24h})</span>
-              </div>
-
-              <span className="text-[#FFB800]">✦</span>
-
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>100% REPRODUCIBLE OPEN-SOURCE FIRMWARE</span>
-              </div>
-
-              <span className="text-[#FFB800]">✦</span>
-
-              <div className="flex items-center gap-1.5 text-white">
-                <Flame className="w-3.5 h-3.5 text-amber-500" />
-                <span>LIMITED GENESIS 24K GOLD INGOT BATCH — ONLY 9 UNITS REMAINING</span>
+                <span>FAST 24-48 HOUR COURIER DISPATCH ACROSS SRI LANKA</span>
               </div>
 
               <span className="text-[#FFB800]">✦</span>
 
               <div className="flex items-center gap-1.5 text-slate-300">
-                <Zap className="w-3 h-3 text-[#FFD600]" />
-                <span>SUB-SECOND LIGHTNING CHECKOUT (0% FEES)</span>
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>NEW TERM BOOKS &amp; STATIONERY NOW IN STOCK</span>
               </div>
 
               <span className="text-[#FFB800]">✦</span>
@@ -262,41 +306,178 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
               <Menu className="w-6 h-6" />
             </button>
 
-            <Link href="/store" className="flex items-center gap-2.5 group">
+            <Link href="/" className="flex items-center gap-2.5 group">
               <div className="relative w-10 h-10 rounded-xl bg-slate-950 p-1 shadow-md flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
                 <span className="font-heading font-black text-2xl text-[#FFD600]">
-                  ₿
+                  P
                 </span>
               </div>
               <div className="flex flex-col">
                 <span className="font-heading font-black text-xl tracking-tight text-slate-950 leading-none">
-                  SATOSHI<span className="text-white">DEFI</span>
+                  PRASANTHI<span className="text-white">CRAFT</span>
                 </span>
                 <span className="text-[9px] font-mono font-bold tracking-widest text-slate-900 uppercase">
-                  VAULT STORE
+                  ONLINE STORE
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Center: Search Input Bar */}
-          <div className="flex-1 max-w-xl mx-auto hidden sm:block">
+          {/* Center: Search Input Bar with Live Database Dropdown */}
+          <div ref={searchContainerRef} className="flex-1 max-w-xl mx-auto hidden sm:block relative">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="What are you looking for?"
-                className="w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-full pl-5 pr-14 py-2.5 text-xs sm:text-sm font-body outline-none shadow-sm focus:ring-2 focus:ring-slate-950 transition"
+                onFocus={() => {
+                  if (searchQuery.trim().length > 0) {
+                    setIsSearchOpen(true);
+                  }
+                }}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                placeholder="Search craft items, toppers, die cuts..."
+                className="w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-full pl-5 pr-20 py-2.5 text-xs sm:text-sm font-body outline-none shadow-sm focus:ring-2 focus:ring-slate-950 transition"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setIsSearchOpen(false);
+                  }}
+                  className="absolute right-12 p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
                 type="submit"
                 className="absolute right-1.5 p-2 rounded-full bg-slate-950 hover:bg-slate-800 text-white transition flex items-center justify-center cursor-pointer shadow-xs"
-                title="Search hardware"
+                title="Search store"
               >
-                <Search className="w-4 h-4" />
+                {isSearching ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className="w-4 h-4" />
+                )}
               </button>
             </form>
+
+            {/* Desktop Live Search Instant Results Popover */}
+            {isSearchOpen && searchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-900">
+                {/* Header bar */}
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <Search className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-slate-600">
+                      {isSearching ? "Searching database..." : `${searchResults.length} product${searchResults.length === 1 ? "" : "s"} found`}
+                    </span>
+                  </div>
+                  {isSearching ? (
+                    <span className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <span className="text-[10px] text-slate-400">Press Enter for all</span>
+                  )}
+                </div>
+
+                {/* Results List */}
+                <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
+                  {searchResults.length === 0 && !isSearching ? (
+                    <div className="p-6 text-center text-xs font-mono space-y-2">
+                      <div className="text-slate-500 font-semibold">No products matching &quot;{searchQuery}&quot; found</div>
+                      <p className="text-slate-400 text-[11px]">
+                        Check your spelling or browse our full catalog.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+                        }}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+                      >
+                        <span>Search Full Catalog</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    searchResults.map((prod) => (
+                      <Link
+                        key={prod.id}
+                        href={`/products/${prod.slug || prod.id}`}
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setSearchQuery("");
+                        }}
+                        className="p-3 flex items-center gap-3 hover:bg-amber-50/60 transition group cursor-pointer"
+                      >
+                        {/* Thumbnail */}
+                        <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 text-amber-600 font-bold group-hover:scale-105 transition-transform">
+                          {prod.image ? (
+                            <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-5 h-5 text-amber-600" />
+                          )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-heading font-bold text-xs sm:text-sm text-slate-900 truncate group-hover:text-amber-700 transition-colors">
+                            {prod.name}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] font-mono font-medium px-2 py-0.2 rounded-md bg-slate-100 text-slate-600 border border-slate-200/80 truncate max-w-[130px]">
+                              {prod.category}
+                            </span>
+                            {prod.inStock ? (
+                              <span className="text-[10px] font-mono text-emerald-700 font-semibold flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                In Stock
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono text-rose-600">Out of stock</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Price */}
+                        <div className="text-right shrink-0">
+                          <div className="font-mono font-bold text-xs sm:text-sm text-slate-950">
+                            {formatPrice(prod.priceUsd)}
+                          </div>
+                          <span className="text-[10px] font-mono text-amber-600 font-bold group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5">
+                            View →
+                          </span>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer bar */}
+                {searchResults.length > 0 && (
+                  <div className="p-2.5 bg-slate-50 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+                      }}
+                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 hover:brightness-105 text-slate-950 font-heading font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+                    >
+                      <span>View all results for &quot;{searchQuery}&quot; in catalog</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Side: Support Hotline + Wishlist + Cart */}
@@ -321,7 +502,7 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
 
             {/* Dedicated Wishlist Button */}
             <Link
-              href="/store/products"
+              href="/products"
               className="relative p-2.5 rounded-full bg-slate-950 hover:bg-slate-800 text-white transition-transform hover:scale-105 cursor-pointer shadow-md flex items-center justify-center"
               title="Saved Wishlist"
             >
@@ -353,56 +534,89 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
 
             {/* User Profile Icon Button & Dropdown */}
             <div className="relative" ref={profileMenuRef}>
-              <button
-                onClick={() => setIsProfileOpen((prev) => !prev)}
-                className={`relative p-2.5 rounded-full bg-slate-950 hover:bg-slate-800 text-white transition-transform hover:scale-105 cursor-pointer shadow-md flex items-center justify-center ${
-                  isProfileOpen ? "ring-2 ring-slate-950 bg-slate-900" : ""
-                }`}
-                title="Customer Profile & Account"
-                aria-label="User Profile"
-              >
-                <User className="w-5 h-5 text-white" />
-              </button>
+              {!customer ? (
+                <button
+                  onClick={() => openAuthModal("login")}
+                  className="relative p-2.5 rounded-full bg-slate-950 hover:bg-slate-800 text-white transition-transform hover:scale-105 cursor-pointer shadow-md flex items-center justify-center group"
+                  title="Sign In or Create Account"
+                  aria-label="Customer Login"
+                >
+                  <User className="w-5 h-5 text-white group-hover:text-[#FFD600] transition-colors" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsProfileOpen((prev) => !prev)}
+                  className={`relative p-1 rounded-full bg-slate-950 hover:bg-slate-800 text-white transition-transform hover:scale-105 cursor-pointer shadow-md flex items-center justify-center ring-2 ${
+                    isProfileOpen ? "ring-[#FFB800] bg-slate-900" : "ring-amber-500/50"
+                  }`}
+                  title={`Customer: ${customer.name} (${customer.email})`}
+                  aria-label="Customer Profile"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FFB800] via-amber-300 to-yellow-200 text-slate-950 font-black flex items-center justify-center text-xs shadow-inner shrink-0">
+                    {customer.name
+                      ? customer.name
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((w) => w[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()
+                      : "CU"}
+                  </div>
+                </button>
+              )}
 
-              {/* Profile Popover Card */}
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-slate-950 text-white rounded-2xl border border-white/10 shadow-2xl p-3.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+              {/* Profile Popover Card (Logged In) */}
+              {isProfileOpen && customer && (
+                <div className="absolute right-0 mt-3 w-72 bg-slate-950 text-white rounded-2xl border border-amber-500/30 shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="flex items-center gap-3 pb-3 border-b border-white/10">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFB800] to-amber-300 text-slate-950 font-black flex items-center justify-center text-sm shadow-inner shrink-0">
-                      LK
+                      {customer.name
+                        ? customer.name
+                            .split(" ")
+                            .filter(Boolean)
+                            .map((w) => w[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()
+                        : "CU"}
                     </div>
                     <div className="flex flex-col min-w-0">
                       <div className="text-xs font-bold text-white truncate flex items-center gap-1.5">
-                        <span>Learnix LK</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FFB800]/20 text-[#FFD600] font-mono font-bold">
-                          VIP
+                        <span className="truncate">{customer.name}</span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FFB800]/20 text-[#FFD600] font-mono font-bold shrink-0">
+                          {customer.role === "admin" ? "ADMIN" : "MEMBER"}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-400 font-mono truncate">
-                        learnixlk@gmail.com
+                        {customer.email}
                       </div>
                     </div>
                   </div>
 
-                  <div className="py-2 space-y-1">
+                  {/* Customer Quick Stats */}
+                  <div className="grid grid-cols-2 gap-2 my-3 p-2 rounded-xl bg-white/5 border border-white/10 text-center">
+                    <div>
+                      <span className="text-[10px] font-mono text-slate-400 uppercase block">Orders</span>
+                      <span className="text-xs font-bold font-mono text-[#FFD600]">{customer.ordersCount}</span>
+                    </div>
+                    <div className="border-l border-white/10">
+                      <span className="text-[10px] font-mono text-slate-400 uppercase block">Spent</span>
+                      <span className="text-xs font-bold font-mono text-white">LKR {customer.totalSpent.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="py-1 space-y-1">
                     <Link
-                      href="/admin"
+                      href="/orders"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-[#FFD600]" />
-                      <span>Merchant Dashboard</span>
-                    </Link>
-                    <Link
-                      href="/admin/orders"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition"
-                    >
-                      <Package className="w-4 h-4 text-slate-400" />
+                      <Package className="w-4 h-4 text-[#FFD600]" />
                       <span>Order History</span>
                     </Link>
                     <Link
-                      href="/store/products"
+                      href="/products"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition"
                     >
@@ -411,15 +625,17 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
                     </Link>
                   </div>
 
-                  <div className="pt-2 border-t border-white/10">
-                    <Link
-                      href="/admin/settings"
-                      onClick={() => setIsProfileOpen(false)}
-                      className="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition"
+                  <div className="pt-2 border-t border-white/10 space-y-1">
+                    <button
+                      onClick={async () => {
+                        await logout();
+                        setIsProfileOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition cursor-pointer"
                     >
-                      <span>Store Settings</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -428,22 +644,129 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
         </div>
 
         {/* Mobile Search Bar (Visible on mobile screens) */}
-        <div className="mt-2.5 sm:hidden">
+        <div ref={mobileSearchContainerRef} className="mt-2.5 sm:hidden relative">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="What are you looking for?"
-              className="w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-full pl-4 pr-12 py-2 text-xs font-body outline-none shadow-xs"
+              onFocus={() => {
+                if (searchQuery.trim().length > 0) {
+                  setIsSearchOpen(true);
+                }
+              }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsSearchOpen(true);
+              }}
+              placeholder="Search craft items, toppers, die cuts..."
+              className="w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-full pl-4 pr-16 py-2 text-xs font-body outline-none shadow-xs"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setIsSearchOpen(false);
+                }}
+                className="absolute right-9 p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
             <button
               type="submit"
               className="absolute right-1 p-1.5 rounded-full bg-slate-950 text-white flex items-center justify-center cursor-pointer"
             >
-              <Search className="w-3.5 h-3.5" />
+              {isSearching ? (
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Search className="w-3.5 h-3.5" />
+              )}
             </button>
           </form>
+
+          {/* Mobile Live Search Dropdown Popover */}
+          {isSearchOpen && searchQuery.trim().length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150 text-slate-900">
+              <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] font-mono">
+                <span className="text-slate-600 font-medium">
+                  {isSearching ? "Searching..." : `${searchResults.length} product${searchResults.length === 1 ? "" : "s"} found`}
+                </span>
+                {isSearching ? (
+                  <span className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span className="text-[9px] text-slate-400">Tap result to view</span>
+                )}
+              </div>
+
+              <div className="max-h-[320px] overflow-y-auto divide-y divide-slate-100">
+                {searchResults.length === 0 && !isSearching ? (
+                  <div className="p-4 text-center text-xs font-mono space-y-2">
+                    <div className="text-slate-500 font-semibold">No products found</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold"
+                    >
+                      <span>Search Catalog</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  searchResults.map((prod) => (
+                    <Link
+                      key={prod.id}
+                      href={`/products/${prod.slug || prod.id}`}
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery("");
+                      }}
+                      className="p-2.5 flex items-center gap-2.5 hover:bg-amber-50/60 transition"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                        {prod.image ? (
+                          <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-4 h-4 text-amber-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-heading font-bold text-xs text-slate-900 truncate">
+                          {prod.name}
+                        </h4>
+                        <div className="text-[10px] font-mono text-slate-500 truncate">
+                          {prod.category}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 font-mono font-bold text-xs text-slate-950">
+                        {formatPrice(prod.priceUsd)}
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="p-2 bg-slate-50 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+                    }}
+                    className="w-full py-1.5 px-3 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-heading font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5"
+                  >
+                    <span>View all results →</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -493,14 +816,14 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
           <div className="p-5 border-b-2 border-black bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-300 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-amber-300 font-heading font-black text-lg">
-                ₿
+                L
               </div>
               <div>
                 <h3 className="font-heading font-black text-base text-slate-950">
                   Categories
                 </h3>
                 <span className="text-[10px] font-mono font-bold text-slate-800">
-                  Sovereign Hardware Suites
+                  Curated Store Catalog
                 </span>
               </div>
             </div>
@@ -514,55 +837,94 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
             </button>
           </div>
 
-          {/* Categories List */}
-          <div className="p-4 overflow-y-auto flex-1 space-y-2">
-            <div className="text-[10px] font-mono uppercase font-bold text-slate-400 px-3 py-1">
-              Shop By Category
+          {/* Drawer Body */}
+          <div className="p-4 overflow-y-auto flex-1 space-y-4">
+            {/* 1. Homepage Showcase Sections (Links directly to the 4 sections on the home page) */}
+            <div className="space-y-1.5">
+              <div className="text-[10px] font-mono uppercase font-bold text-amber-800 px-3 py-1 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 text-amber-600" />
+                <span>Home Showcase Sections</span>
+              </div>
+              <div className="grid grid-cols-1 gap-1.5">
+                {SHOWCASE_SECTIONS.map((sec) => {
+                  const Icon = sec.id === "best-sellers" ? Flame : sec.id === "new-arrivals" ? Zap : sec.id === "featured-products" ? Sparkles : Package;
+                  return (
+                    <Link
+                      key={sec.id}
+                      href={sec.href}
+                      onClick={() => setCategoryDrawerOpen(false)}
+                      className="flex items-center justify-between p-2.5 rounded-xl border border-amber-300/80 bg-amber-50/50 hover:bg-amber-100/80 hover:border-amber-400 transition-all group"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-200/70 border border-amber-300 flex items-center justify-center text-amber-900 group-hover:scale-105 transition-transform">
+                          <Icon className="w-4 h-4 stroke-[2.2]" />
+                        </div>
+                        <div>
+                          <div className="font-heading font-bold text-xs text-slate-950 group-hover:text-amber-900 transition">
+                            {sec.title}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-medium line-clamp-1">
+                            {sec.tagline}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-amber-700 group-hover:translate-x-0.5 transition" />
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
 
-            {categories.map((cat: any, idx: number) => {
-              const Icon = cat.icon;
-              const count = cat.count;
+            {/* 2. Shop By Category (Product Categories ONLY) */}
+            <div className="space-y-1.5 pt-2 border-t border-slate-200">
+              <div className="text-[10px] font-mono uppercase font-bold text-slate-400 px-3 py-1">
+                Shop By Category
+              </div>
 
-              return (
-                <Link
-                  key={idx}
-                  href={cat.href}
-                  onClick={() => setCategoryDrawerOpen(false)}
-                  className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 hover:border-black hover:bg-amber-50/60 transition-all group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 group-hover:scale-105 transition-transform">
-                      <Icon className="w-4 h-4 stroke-[2.2]" />
-                    </div>
-                    <div>
-                      <div className="font-heading font-bold text-sm text-slate-950 group-hover:text-amber-800 transition">
-                        {cat.name}
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-medium line-clamp-1">
-                        {cat.tagline}
-                      </div>
-                    </div>
-                  </div>
+              {categories.map((cat: any, idx: number) => {
+                const Icon = cat.icon;
+                const count = cat.count;
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                      {count}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-black group-hover:translate-x-0.5 transition" />
-                  </div>
-                </Link>
-              );
-            })}
+                return (
+                  <Link
+                    key={idx}
+                    href={cat.href}
+                    onClick={() => setCategoryDrawerOpen(false)}
+                    className="flex items-center justify-between p-3 rounded-xl border-2 border-black/10 hover:border-black hover:bg-slate-50 transition-all group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-300 flex items-center justify-center text-slate-800 group-hover:scale-105 transition-transform">
+                        <Icon className="w-4 h-4 stroke-[2.2]" />
+                      </div>
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-950 group-hover:text-amber-800 transition">
+                          {cat.name}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-medium line-clamp-1">
+                          {cat.tagline}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                        {count}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-black group-hover:translate-x-0.5 transition" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
             {/* View All Products Link */}
             <div className="pt-2">
               <Link
-                href="/store/products"
+                href="/products"
                 onClick={() => setCategoryDrawerOpen(false)}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-black text-white font-heading font-bold text-xs uppercase tracking-wider hover:bg-slate-900 border-2 border-black shadow-[3px_3px_0px_0px_#FFB800] transition"
               >
-                <span>Browse All Hardware</span>
+                <span>Browse All Products</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

@@ -77,7 +77,7 @@ export default function Orders() {
     toggleSelectAll,
     handleRowCheckboxClick,
     isRowSelected,
-  } = useTableLogic(ordersList, "id");
+  } = useTableLogic(ordersList, "id", "id", "desc");
 
   // Popover & Bulk Action States
   const [showAnalyticsBar, setShowAnalyticsBar] = useState(true);

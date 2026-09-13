@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
@@ -13,50 +13,51 @@ import {
   AtSign, 
   Hash, 
   Paperclip,
-  Image as ImageIcon
+  Image as ImageIcon,
+  UserCheck
 } from "lucide-react";
 import { PersonIcon } from "@shopify/polaris-icons";
 import { cn } from "@/lib/utils";
+import { getAdminCustomerByIdAction } from "@/app/actions/customers";
 
-const mockCustomerDetails: Record<string, any> = {
-  "1": {
+const defaultCustomer = {
+  name: "Amila Upulitha",
+  spent: "Rs 20,560.00",
+  ordersCount: "1",
+  since: "About 14 hours",
+  rfmGroup: "Champions",
+  isRegisteredUser: true,
+  lastOrder: {
+    id: "#1017",
+    paymentStatus: "Payment pending",
+    fulfillmentStatus: "Unfulfilled",
+    total: "Rs 20,560.00",
+    date: "August 8, 2026 at 11:38 am from Online Store",
+    items: [
+      {
+        name: "BUILDING BLOCKS YEAR 3 SPELLING GRAMMER",
+        qty: 3,
+        price: "Rs 11,160.00"
+      },
+      {
+        name: "BUILDING BLOCKS YEAR 4 SPELLING GRAMMER",
+        qty: 3,
+        price: "Rs 9,400.00"
+      }
+    ]
+  },
+  contact: {
+    email: "upulitha84@gmail.com",
+    note: "Will receive notifications in English"
+  },
+  address: {
     name: "Amila Upulitha",
-    spent: "Rs 20,560.00",
-    ordersCount: "1",
-    since: "About 14 hours",
-    rfmGroup: "Champions",
-    lastOrder: {
-      id: "#1017",
-      paymentStatus: "Payment pending",
-      fulfillmentStatus: "Unfulfilled",
-      total: "Rs 20,560.00",
-      date: "August 8, 2026 at 11:38 am from Online Store",
-      items: [
-        {
-          name: "BUILDING BLOCKS YEAR 3 SPELLING GRAMMER",
-          qty: 3,
-          price: "Rs 11,160.00"
-        },
-        {
-          name: "BUILDING BLOCKS YEAR 4 SPELLING GRAMMER",
-          qty: 3,
-          price: "Rs 9,400.00"
-        }
-      ]
-    },
-    contact: {
-      email: "upulitha84@gmail.com",
-      note: "Will receive notifications in English"
-    },
-    address: {
-      name: "Amila Upulitha",
-      line1: "Kandapalathuduwa Welitha Uluvitiya Galle",
-      line2: "Uluvitike",
-      city: "GALLE",
-      postal: "80168",
-      country: "Sri Lanka",
-      phone: "0718376329"
-    }
+    line1: "Kandapalathuduwa Welitha Uluvitiya Galle",
+    line2: "Uluvitike",
+    city: "GALLE",
+    postal: "80168",
+    country: "Sri Lanka",
+    phone: "0718376329"
   }
 };
 
@@ -65,20 +66,55 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   const unwrappedParams = use(params);
   const customerId = unwrappedParams?.id || "1";
 
-  // Default to Amila Upulitha if mock data not specific
-  const customer = mockCustomerDetails[customerId] || {
-    name: customerId === "2" ? "Fathima Hirshard" : customerId === "4" ? "E. P. H. De Silva" : "Amila Upulitha",
-    spent: "Rs 20,560.00",
-    ordersCount: "1",
-    since: "About 14 hours",
-    rfmGroup: "Champions",
-    lastOrder: mockCustomerDetails["1"].lastOrder,
-    contact: mockCustomerDetails["1"].contact,
-    address: mockCustomerDetails["1"].address
-  };
-
+  const [customer, setCustomer] = useState(defaultCustomer);
   const [commentText, setCommentText] = useState("");
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    getAdminCustomerByIdAction(customerId)
+      .then((data) => {
+        if (data?.customer) {
+          const c = data.customer;
+          const firstOrder = data.orders && data.orders[0];
+          setCustomer({
+            name: c.name,
+            spent: c.totalSpentFormatted,
+            ordersCount: c.ordersCount.toString(),
+            since: c.createdAtFormatted,
+            rfmGroup: c.ordersCount > 2 ? "Champions" : "New Customer",
+            isRegisteredUser: c.isRegisteredUser,
+            lastOrder: firstOrder
+              ? {
+                  id: firstOrder.id,
+                  paymentStatus: firstOrder.paymentStatus || "Paid",
+                  fulfillmentStatus: firstOrder.fulfillmentStatus || "Unfulfilled",
+                  total: `$${parseFloat(firstOrder.total).toFixed(2)}`,
+                  date: firstOrder.createdAt ? new Date(firstOrder.createdAt).toLocaleDateString() : "Recently",
+                  items: ((firstOrder.products as any[]) || []).map((p) => ({
+                    name: p.name,
+                    qty: p.qty,
+                    price: `$${p.price.toFixed(2)}`,
+                  })),
+                }
+              : defaultCustomer.lastOrder,
+            contact: {
+              email: c.email,
+              note: c.notes || "Will receive notifications in English",
+            },
+            address: {
+              name: c.shippingAddress?.name || c.name,
+              line1: c.shippingAddress?.line1 || c.location,
+              line2: c.shippingAddress?.line2 || "",
+              city: c.shippingAddress?.city || c.location,
+              postal: c.shippingAddress?.postalCode || "00100",
+              country: c.shippingAddress?.country || "Sri Lanka",
+              phone: c.phone || c.shippingAddress?.phone || "—",
+            },
+          });
+        }
+      })
+      .catch((err) => console.error("Failed to load customer details:", err));
+  }, [customerId]);
 
   const handleCopyEmail = () => {
     setCopied(true);
@@ -99,6 +135,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           </Link>
           <span className="text-[#616161] text-[15px] font-normal leading-none">›</span>
           <h1 className="text-[18px] font-bold text-[#1a1a1a]">{customer.name}</h1>
+          {customer.isRegisteredUser && (
+            <span className="px-2 py-0.5 rounded bg-[#e8f5e9] text-[#2e7d32] text-[11px] font-semibold tracking-tight inline-flex items-center gap-1 ml-1.5">
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>Web User Account</span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

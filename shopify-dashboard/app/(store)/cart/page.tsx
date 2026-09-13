@@ -34,13 +34,13 @@ export default function StoreCartPage() {
     if (!inputCode) return;
     const ok = await applyDiscount(inputCode);
     if (ok) {
-      setCodeMsg({ text: "21% Satoshi Halving Voucher Applied!", ok: true });
+      setCodeMsg({ text: "10% Welcome Voucher Applied!", ok: true });
     } else {
-      setCodeMsg({ text: "Invalid code. Try 'SATOSHI21'", ok: false });
+      setCodeMsg({ text: "Invalid code. Try 'WELCOME10'", ok: false });
     }
   };
 
-  const freeShippingThreshold = 500;
+  const freeShippingThreshold = 50;
   const isFreeShipping = totalUsd >= freeShippingThreshold;
 
   if (items.length === 0) {
@@ -49,16 +49,16 @@ export default function StoreCartPage() {
         <div className="w-20 h-20 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
           <ShoppingBag className="w-10 h-10" />
         </div>
-        <h1 className="font-heading font-bold text-3xl text-slate-900">Your Vault Manifest is Empty</h1>
-        <p className="text-sm font-mono text-slate-500 max-w-md mx-auto">
-          Equip yourself with cryptographic cold storage, hydro mining ASICs, or sovereign Lightning nodes.
+        <h1 className="font-heading font-bold text-3xl text-slate-900">Your Shopping Cart is Empty</h1>
+        <p className="text-sm font-body text-slate-500 max-w-md mx-auto">
+          Discover our collection of educational books, workbooks, fine stationery, and smart tech.
         </p>
         <Link
-          href="/store"
+          href="/"
           className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 text-slate-950 font-heading font-bold text-xs uppercase tracking-wider shadow-md shadow-amber-500/20 hover:scale-105 transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Explore Protocol Catalog</span>
+          <span>Explore Store Catalog</span>
         </Link>
       </div>
     );
@@ -69,15 +69,15 @@ export default function StoreCartPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="font-heading font-black text-3xl sm:text-4xl text-slate-900">
-            Vault Manifest & <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Settlement</span>
+            Shopping Cart & <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-[#FFB800] to-yellow-500">Summary</span>
           </h1>
-          <p className="text-xs sm:text-sm font-mono text-slate-500 mt-1">
-            Review allocated sovereign hardware before dispatching to mempool checkout.
+          <p className="text-xs sm:text-sm font-body text-slate-500 mt-1">
+            Review your selected items before proceeding to checkout.
           </p>
         </div>
 
         <Link
-          href="/store"
+          href="/"
           className="inline-flex items-center gap-2 text-xs font-mono text-amber-700 font-bold hover:underline"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
@@ -100,59 +100,44 @@ export default function StoreCartPage() {
                   ) : item.product.image ? (
                     <img src={item.product.image} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    "₿"
+                    <span>📦</span>
                   )}
                 </div>
 
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold text-amber-800 uppercase">
-                      {item.product.category}
-                    </span>
-                    {item.product.badge && (
-                      <span className="text-[10px] font-mono text-slate-500">
-                        • {item.product.badge}
-                      </span>
-                    )}
-                  </div>
-                  <Link
-                    href={`/store/products/${item.product.id}`}
-                    className="font-heading font-bold text-lg text-slate-900 hover:text-amber-700 transition line-clamp-1"
-                  >
+                  <h3 className="font-heading font-bold text-base text-slate-900">
                     {item.product.name}
-                  </Link>
+                  </h3>
                   <div className="text-xs font-mono text-slate-500 mt-0.5">
-                    Unit: {formatPrice(item.product.priceUsd)} (≈ {item.product.priceSats.toLocaleString()} Sats)
+                    Unit Price: {formatPrice(item.product.priceUsd)}
                   </div>
                 </div>
               </div>
 
-              {/* Quantity and Line Total */}
-              <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-                <div className="flex items-center rounded-full bg-slate-100 border border-slate-200 px-3 py-1.5 shadow-xs">
+              <div className="flex items-center gap-6 self-end sm:self-center">
+                {/* Quantity Controls */}
+                <div className="flex items-center border border-slate-200 rounded-full bg-slate-50 p-1">
                   <button
                     onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                    className="text-slate-600 hover:text-slate-900 px-1.5 cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-white text-slate-600 transition"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-3 font-mono text-sm font-bold text-slate-900">
+                  <span className="px-3 text-xs font-mono font-bold text-slate-900">
                     {item.quantity}
                   </span>
                   <button
                     onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                    className="text-slate-600 hover:text-slate-900 px-1.5 cursor-pointer"
+                    className="p-1.5 rounded-full hover:bg-white text-slate-600 transition"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
+                {/* Subtotal */}
                 <div className="text-right min-w-28">
                   <div className="font-mono text-lg font-bold text-slate-900">
                     {formatPrice(item.product.priceUsd * item.quantity)}
-                  </div>
-                  <div className="text-[10px] font-mono text-amber-700 font-bold">
-                    ≈ {(item.product.priceSats * item.quantity).toLocaleString()} Sats
                   </div>
                 </div>
 
@@ -179,7 +164,7 @@ export default function StoreCartPage() {
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Code: SATOSHI21"
+                placeholder="Code: WELCOME10"
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value)}
                 className="flex-1 bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 uppercase placeholder:normal-case placeholder:text-slate-400 outline-none"
@@ -201,32 +186,29 @@ export default function StoreCartPage() {
           {/* Breakdown */}
           <div className="space-y-3 font-mono text-xs border-t border-slate-200 pt-4">
             <div className="flex justify-between text-slate-600">
-              <span>Hardware Subtotal:</span>
+              <span>Items Subtotal:</span>
               <span className="text-slate-900 font-semibold">{formatPrice(totalUsd / (1 - (discountPercent / 100)))}</span>
             </div>
 
             {discountPercent > 0 && (
               <div className="flex justify-between text-emerald-700 font-semibold">
-                <span>Halving Voucher (21% Off):</span>
-                <span>- {formatPrice((totalUsd / (1 - 0.21)) * 0.21)}</span>
+                <span>Discount Voucher ({discountPercent}% Off):</span>
+                <span>- {formatPrice((totalUsd / (1 - discountPercent / 100)) * (discountPercent / 100))}</span>
               </div>
             )}
 
             <div className="flex justify-between text-slate-600">
-              <span>Air-Gapped Insured Courier:</span>
-              <span className={isFreeShipping ? "text-emerald-700 font-bold" : "text-slate-900 font-semibold"}>
-                {isFreeShipping ? "FREE" : "$25.00"}
+              <span>Islandwide Delivery:</span>
+              <span className="text-emerald-700 font-bold">
+                FREE
               </span>
             </div>
 
             <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline">
-              <span className="font-heading font-bold text-base text-slate-900">Final Settlement:</span>
+              <span className="font-heading font-bold text-base text-slate-900">Grand Total:</span>
               <div className="text-right">
                 <div className="font-mono text-2xl font-black text-slate-900">
-                  {formatPrice(totalUsd + (isFreeShipping ? 0 : 25))}
-                </div>
-                <div className="text-xs text-slate-500 mt-0.5 font-medium">
-                  ≈ {(totalSats + (isFreeShipping ? 0 : 26250)).toLocaleString()} Satoshis • ₿ {totalBtc}
+                  {formatPrice(totalUsd)}
                 </div>
               </div>
             </div>
@@ -234,16 +216,15 @@ export default function StoreCartPage() {
 
           {/* Checkout CTA Button */}
           <Link
-            href="/store/checkout"
+            href="/checkout"
             className="w-full py-4 rounded-full bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 hover:scale-105 shadow-md shadow-amber-500/20 text-slate-950 text-center font-heading font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
-            <Zap className="w-4 h-4 text-slate-950" />
-            <span>Proceed to Protocol Checkout</span>
+            <span>Proceed to Checkout</span>
           </Link>
 
           <div className="flex items-center justify-center gap-2 text-[11px] font-mono text-slate-500 pt-1 font-medium">
             <Lock className="w-3.5 h-3.5 text-amber-600" />
-            <span>Encrypted Settlement Enclave</span>
+            <span>100% Secure SSL Protected Checkout</span>
           </div>
         </div>
       </div>

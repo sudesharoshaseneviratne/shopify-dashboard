@@ -1,36 +1,65 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { PersonIcon } from "@shopify/polaris-icons";
 import { Badge } from "@/components/admin/Badge";
-import { Search, Columns, Users, ArrowUp, ArrowDown, Sparkles } from "lucide-react";
+import { 
+  Search, 
+  Columns, 
+  ArrowUp, 
+  ArrowDown, 
+  RefreshCw, 
+  UserCheck, 
+  Shield, 
+  Mail, 
+  Phone,
+  Plus
+} from "lucide-react";
 import { useTableLogic } from "@/hooks/admin/useTableLogic";
+import { getAdminCustomersAction, type AdminCustomerItem } from "@/app/actions/customers";
 
-const initialCustomers = [
-  { id: 1, name: "Amila Upulitha", subscription: "Not subscribed", location: "Galle, Sri Lanka", orders: "1", spent: "Rs 20,560.00" },
-  { id: 2, name: "ekanayakewasantha58@gmail.com", subscription: "Subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 3, name: "Fathima Hirshard", subscription: "Not subscribed", location: "Colombo, Sri Lanka", orders: "1", spent: "Rs 2,060.00" },
-  { id: 4, name: "Isuru Abeyrama", subscription: "Not subscribed", location: "Tangalle, Sri Lanka", orders: "1", spent: "Rs 3,960.00" },
-  { id: 5, name: "E. P. H. De Silva", subscription: "Not subscribed", location: "Polgolla, Sri Lanka", orders: "1", spent: "Rs 2,436.00" },
-  { id: 6, name: "Priyanka Rupasinghe", subscription: "Not subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 7, name: "Alex Johnson", subscription: "Subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 8, name: "Krishni Maheshika", subscription: "Subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 9, name: "fathima Raihana", subscription: "Not subscribed", location: "AMPARA, Sri Lanka", orders: "1", spent: "Rs 4,200.00" },
-  { id: 10, name: "Pradeepa Prasadini", subscription: "Not subscribed", location: "Select an option..., Sri Lanka", orders: "1", spent: "Rs 8,560.00" },
-  { id: 11, name: "Lakmi Nimeshika", subscription: "Not subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 12, name: "Manjula Karunanayaka", subscription: "Not subscribed", location: "Hokandara South, Hokandara, Sri Lanka", orders: "1", spent: "Rs 4,392.00" },
-  { id: 13, name: "Nilushi Wickramasinghe", subscription: "Subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 14, name: "chanu yehansa", subscription: "Not subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 15, name: "Victoria Bloom", subscription: "Not subscribed", location: "Wariyapola, Sri Lanka", orders: "1", spent: "Rs 3,400.00" },
-  { id: 16, name: "Dahamsiri HA", subscription: "Not subscribed", location: "Embilipitiya, Sri Lanka", orders: "1", spent: "Rs 12,324.00" },
-  { id: 17, name: "Dulanjali Gamage", subscription: "Subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 18, name: "Ethan Williams", subscription: "Not subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-  { id: 19, name: "Dihan Hettige", subscription: "Not subscribed", location: "Colombo, Sri Lanka", orders: "1", spent: "Rs 1,612.00" },
-  { id: 20, name: "learnix.lk@ilovemyemail.net", subscription: "Not subscribed", location: "Sri Lanka", orders: "0", spent: "Rs 0.00" },
-  { id: 21, name: "Dhammika Wijesooriya", subscription: "Not subscribed", location: "", orders: "0", spent: "Rs 0.00" },
-];
+export default function CustomersPage() {
+  const [customersData, setCustomersData] = useState<AdminCustomerItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-export default function Customers() {
+  const fetchCustomers = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) setIsLoading(true);
+    try {
+      const items = await getAdminCustomersAction();
+      setCustomersData(items);
+    } catch (err) {
+      console.error("Failed to load customers:", err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    fetchCustomers(false);
+  };
+
+  // Filter customers by search term
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm.trim()) return customersData;
+    const q = searchTerm.toLowerCase().trim();
+    return customersData.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.location.toLowerCase().includes(q) ||
+        c.phone.toLowerCase().includes(q)
+    );
+  }, [customersData, searchTerm]);
+
   const {
     sortedData: customers,
     selectedIds,
@@ -41,7 +70,7 @@ export default function Customers() {
     toggleSelectAll,
     handleRowCheckboxClick,
     isRowSelected,
-  } = useTableLogic(initialCustomers, "id");
+  } = useTableLogic(filteredCustomers, "id");
 
   const renderSortIndicator = (colKey: string) => {
     if (sortColumn !== colKey) return null;
@@ -52,15 +81,36 @@ export default function Customers() {
     );
   };
 
+  const webUsersCount = customersData.filter((c) => c.isRegisteredUser).length;
+
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <h1 className="text-[20px] font-bold text-[#1a1a1a] flex items-center gap-2">
-          <PersonIcon className="w-5 h-5 fill-current text-[#1a1a1a]" />
-          <span>Customers</span>
-        </h1>
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-[20px] font-bold text-[#1a1a1a] flex items-center gap-2">
+            <PersonIcon className="w-5 h-5 fill-current text-[#1a1a1a]" />
+            <span>Customers</span>
+          </h1>
+          <span className="text-[12px] font-medium bg-[#f1f2f4] text-[#616161] px-2 py-0.5 rounded-full">
+            {customersData.length} total
+          </span>
+          {webUsersCount > 0 && (
+            <span className="text-[12px] font-medium bg-[#e6f4ea] text-[#107c41] px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#107c41]" />
+              {webUsersCount} website users
+            </span>
+          )}
+        </div>
+
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            className="p-1.5 text-[13px] font-medium border border-[#c9cccf] rounded-md bg-white hover:bg-[#f6f6f7] text-[#303030] shadow-2xs transition flex items-center gap-1"
+            title="Refresh customers from database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#005bd3]" : "text-[#616161]"}`} />
+          </button>
           <button className="px-2.5 py-1 text-[13px] font-medium border border-[#c9cccf] rounded-md bg-white hover:bg-[#f6f6f7] text-[#303030] shadow-2xs transition">
             Export
           </button>
@@ -69,15 +119,16 @@ export default function Customers() {
           </button>
           <Link
             href="/admin/customers/new"
-            className="px-3.5 py-1 text-[13px] font-semibold text-white bg-[#1a1a1a] hover:bg-[#303030] rounded-md shadow-2xs transition inline-flex items-center justify-center"
+            className="px-3.5 py-1 text-[13px] font-semibold text-white bg-[#1a1a1a] hover:bg-[#303030] rounded-md shadow-2xs transition inline-flex items-center gap-1 justify-center"
           >
-            Add customer
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add customer</span>
           </Link>
         </div>
       </div>
 
       {/* Main Table Card */}
-      <div className="polaris-card">
+      <div className="polaris-card bg-white border border-[#e1e3e5] rounded-xl shadow-2xs overflow-hidden">
         {/* Table Toolbar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#e1e3e5] bg-white">
           <div className="flex items-center gap-2 flex-1">
@@ -85,7 +136,9 @@ export default function Customers() {
               <Search className="w-3.5 h-3.5 text-[#616161] absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Search customers"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name, email, or location..."
                 className="w-full text-[13px] bg-[#fafafa] border border-[#c9cccf] rounded-md pl-8 pr-3 py-1 outline-none focus:border-[#005bd3] focus:bg-white transition"
               />
             </div>
@@ -104,7 +157,7 @@ export default function Customers() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="polaris-table">
+          <table className="polaris-table w-full text-left">
             <thead>
               <tr className="border-b border-[#e1e3e5] text-[#616161] text-[12px] font-medium bg-[#f7f7f7] select-none">
                 <th className="px-3 py-2 w-10">
@@ -133,46 +186,77 @@ export default function Customers() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer, idx) => {
-                const selected = isRowSelected(customer.id);
-                return (
-                  <tr
-                    key={customer.id}
-                    className={`border-b border-[#f1f1f1] h-[40px] transition ${
-                      selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
-                    }`}
-                  >
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => {}}
-                        onClick={(e) => handleRowCheckboxClick(e, idx, customer.id)}
-                        className="rounded-[4px] border-[#c9cccf] cursor-pointer"
-                      />
-                    </td>
-                    <td className="px-3 py-2 font-medium text-[#1a1a1a]">
-                      <Link href={`/admin/customers/${customer.id}`} className="hover:underline">
-                        {customer.name}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-2">
-                      <Badge variant={customer.subscription === "Subscribed" ? "success" : "neutral"} icon="none">
-                        {customer.subscription}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-2 text-[#616161]">
-                      {customer.location ? (
-                        customer.location
-                      ) : (
-                        <span className="text-[#8c8c8c]">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-[#1a1a1a] font-medium text-right">{customer.orders}</td>
-                    <td className="px-3 py-2 text-[#1a1a1a] font-medium text-right">{customer.spent}</td>
-                  </tr>
-                );
-              })}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-xs text-[#616161]">
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#005bd3]" />
+                      <span>Loading customers from database...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : customers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-xs text-[#616161]">
+                    No customers found matching &ldquo;{searchTerm}&rdquo;.
+                  </td>
+                </tr>
+              ) : (
+                customers.map((customer, idx) => {
+                  const selected = isRowSelected(customer.id);
+                  return (
+                    <tr
+                      key={customer.id}
+                      className={`border-b border-[#f1f1f1] h-[44px] transition ${
+                        selected ? "bg-[#f4f6f8]" : "hover:bg-[#f7f7f7]"
+                      }`}
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => {}}
+                          onClick={(e) => handleRowCheckboxClick(e, idx, customer.id)}
+                          className="rounded-[4px] border-[#c9cccf] cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/admin/customers/${customer.id}`} className="font-medium text-[#1a1a1a] hover:underline">
+                            {customer.name}
+                          </Link>
+                          {customer.isRegisteredUser && (
+                            <span 
+                              className="px-1.5 py-0.5 rounded bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-semibold tracking-tight inline-flex items-center gap-0.5"
+                              title="Registered Storefront Website Account"
+                            >
+                              <UserCheck className="w-3 h-3" />
+                              <span>Web User</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[#8c8c8c] truncate max-w-xs">
+                          {customer.email}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant={customer.subscription === "Subscribed" ? "success" : "neutral"} icon="none">
+                          {customer.subscription}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-[#616161] text-[13px]">
+                        {customer.location ? (
+                          customer.location
+                        ) : (
+                          <span className="text-[#8c8c8c]">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-[#1a1a1a] font-medium text-right text-[13px]">{customer.orders}</td>
+                      <td className="px-3 py-2 text-[#1a1a1a] font-medium text-right text-[13px]">{customer.spent}</td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

@@ -857,12 +857,12 @@ export default function CreateOrderPage() {
                 <div className="space-y-1">
                   <label className="font-medium text-[#303030]">Price</label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-2.5 text-[12px] text-[#616161]">Rs</span>
+                    <span className="absolute left-2.5 text-[12px] text-[#616161]">LKR</span>
                     <input
                       type="text"
                       value={customPrice}
                       onChange={(e) => setCustomPrice(e.target.value)}
-                      className="w-full text-[13px] border border-[#c9cccf] rounded-lg pl-8 pr-2 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3]"
+                      className="w-full text-[13px] border border-[#c9cccf] rounded-lg pl-12 pr-2 py-1.5 outline-none focus:border-[#005bd3] focus:ring-1 focus:ring-[#005bd3]"
                     />
                   </div>
                 </div>

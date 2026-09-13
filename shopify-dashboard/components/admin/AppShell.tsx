@@ -13,11 +13,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  const isLoginPage = pathname === "/admin/login" || pathname === "/login";
-  const isBulkEditor = pathname?.startsWith("/admin/products/bulk-editor") || pathname?.startsWith("/admin/bulk-editor");
-  const isStore = pathname?.startsWith("/store");
+  const isAdmin = pathname?.startsWith("/admin");
 
-  if (isStore) {
+  if (!isAdmin) {
     return (
       <div 
         suppressHydrationWarning 
@@ -28,7 +26,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (isLoginPage) {
+  const isAuthPage = 
+    pathname === "/admin/login" || 
+    pathname === "/login" || 
+    pathname?.startsWith("/admin/auth");
+  const isBulkEditor = pathname?.startsWith("/admin/products/bulk-editor") || pathname?.startsWith("/admin/bulk-editor");
+
+  if (isAuthPage) {
     return <div suppressHydrationWarning className="w-full min-h-screen bg-[#0b0d0e]">{children}</div>;
   }
 

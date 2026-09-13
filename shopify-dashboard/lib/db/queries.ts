@@ -12,7 +12,7 @@ function mapDbProductToStoreProduct(row: typeof products.$inferSelect): StorePro
     id: row.id,
     name: row.name,
     tagline: row.tagline || "",
-    category: row.category as StoreProduct["category"],
+    category: (row.category || "General") as StoreProduct["category"],
     priceUsd: parseFloat(row.priceUsd) || 0,
     priceSats: row.priceSats || 0,
     rating: parseFloat(row.rating || "5.0") || 5.0,
@@ -40,14 +40,38 @@ function mapDbProductToStoreProduct(row: typeof products.$inferSelect): StorePro
  */
 export const getStoreProducts = cache(async (): Promise<StoreProduct[]> => {
   try {
-    const rows = await db
-      .select()
-      .from(products)
-      .where(eq(products.status, "Active"))
-      .orderBy(desc(products.createdAt));
+    const [rows, relations, colRows] = await Promise.all([
+      db
+        .select()
+        .from(products)
+        .where(eq(products.status, "Active"))
+        .orderBy(desc(products.createdAt)),
+      db.select().from(productCollections).catch(() => []),
+      db.select().from(collections).catch(() => []),
+    ]);
 
     if (rows && rows.length > 0) {
-      return rows.map(mapDbProductToStoreProduct);
+      const colMap = new Map((colRows || []).map((c) => [c.id, c]));
+      const productCollectionsMap = new Map<string, string[]>();
+
+      for (const r of relations || []) {
+        const col = colMap.get(r.collectionId);
+        const list = productCollectionsMap.get(r.productId) || [];
+        if (col) {
+          list.push(col.id.toLowerCase(), col.slug.toLowerCase(), col.title.toLowerCase());
+        } else {
+          list.push(r.collectionId.toLowerCase());
+        }
+        productCollectionsMap.set(r.productId, list);
+      }
+
+      return rows.map((r) => {
+        const mapped = mapDbProductToStoreProduct(r);
+        return {
+          ...mapped,
+          collections: productCollectionsMap.get(r.id) || [],
+        };
+      });
     }
 
     // If the database is connected and contains products, but none are Active (e.g. all drafted),
@@ -116,13 +140,13 @@ export const getStoreProductById = cache(async (idOrSlug: string): Promise<Store
  */
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   id: 1,
-  storeName: "SATOSHI DEFI",
-  supportPhone: "+9475 245 5812",
-  supportEmail: "support@satoshidefi.vault",
+  storeName: "PRASANTHI CRAFT",
+  supportPhone: "+9477 423 0976",
+  supportEmail: "prasanthicrafts@gmail.com",
   freeShippingThreshold: "5000.00",
   standardShippingFee: "350.00",
-  marqueeAnnouncement: "USE VOUCHER CODE SATOSHI21 FOR 21% OFF",
-  btcUsdRate: "95240.00",
+  marqueeAnnouncement: "USE VOUCHER CODE WELCOME10 FOR 10% OFF",
+  btcUsdRate: "320.00",
   isMaintenanceMode: false,
   updatedAt: new Date(),
 };
@@ -194,11 +218,11 @@ export async function verifyDiscountCode(code: string): Promise<{
     console.error("⚠️ [Supabase Query] Error validating discount code:", error);
 
     // Fallback logic for offline / local mock codes
-    if (cleanCode === "SATOSHI21" || cleanCode === "HALVING" || cleanCode === "BITCOIN") {
-      return { valid: true, code: cleanCode, discountPercent: 21, message: "21% Satoshi Discount applied!" };
+    if (cleanCode === "WELCOME10" || cleanCode === "PRASANTHI10" || cleanCode === "PROMO15") {
+      return { valid: true, code: cleanCode, discountPercent: 10, message: "10% Discount applied!" };
     }
-    if (cleanCode === "VIP10" || cleanCode === "GENESIS10") {
-      return { valid: true, code: cleanCode, discountPercent: 10, message: "10% VIP Discount applied!" };
+    if (cleanCode === "VIP20" || cleanCode === "SUPER20") {
+      return { valid: true, code: cleanCode, discountPercent: 20, message: "20% VIP Discount applied!" };
     }
 
     return { valid: false, message: "Invalid voucher code" };
@@ -210,48 +234,48 @@ export async function verifyDiscountCode(code: string): Promise<{
  */
 export const DEFAULT_STORE_COLLECTIONS: StoreCollection[] = [
   {
-    id: "cold-storage",
-    title: "Cold Storage",
-    slug: "cold-storage",
-    description: "Zero RF, air-gapped cryptographic hardware signers with CC EAL6+ element isolation.",
-    icon: "Shield",
-    badge: "CC EAL6+ Sealed",
-    productCount: 2,
-  },
-  {
-    id: "mining-asics",
-    title: "Mining & ASICs",
-    slug: "mining-asics",
-    description: "Ultra-silent liquid cooled SHA-256 home mining hardware for boutique hashers.",
-    icon: "Cpu",
-    badge: "Liquid Cooled 21 J/TH",
+    id: "books-workbooks",
+    title: "Books & Workbooks",
+    slug: "books-workbooks",
+    description: "Educational textbooks, curriculum workbooks, guides, and reference literature.",
+    icon: "BookOpen",
+    badge: "Bestsellers",
     productCount: 1,
   },
   {
-    id: "sovereign-nodes",
-    title: "Sovereign Nodes",
-    slug: "sovereign-nodes",
-    description: "Dedicated Bitcoin Core & Lightning appliances with zero cloud telemetry.",
-    icon: "Server",
-    badge: "Non-Custodial ZK",
-    productCount: 2,
+    id: "tech-electronics",
+    title: "Tech & Electronics",
+    slug: "tech-electronics",
+    description: "Scientific calculators, smart study accessories, audio devices, and digital learning tools.",
+    icon: "Cpu",
+    badge: "Tech Essentials",
+    productCount: 1,
   },
   {
-    id: "security-backup",
-    title: "Security & Backup",
-    slug: "security-backup",
-    description: "Indestructible titanium seed matrices, Faraday capsules, and tamper shields.",
-    icon: "Lock",
-    badge: "Indestructible Titanium",
-    productCount: 2,
+    id: "stationery-office",
+    title: "Stationery & Office",
+    slug: "stationery-office",
+    description: "Premium notebooks, fine pens, planners, organizers, and office supplies.",
+    icon: "Layers",
+    badge: "Premium Quality",
+    productCount: 1,
   },
   {
-    id: "cryptographic-relics",
-    title: "Cryptographic Relics",
-    slug: "cryptographic-relics",
-    description: "Physical Bitcoin genesis ingots, commemorative proof bars, and sovereign collectibles.",
-    icon: "Sparkles",
-    badge: "24K .9999 Proof Bar",
+    id: "school-essentials",
+    title: "School Essentials",
+    slug: "school-essentials",
+    description: "Backpacks, pencil cases, geometry kits, art supplies, and daily classroom gear.",
+    icon: "Package",
+    badge: "Student Favorite",
+    productCount: 1,
+  },
+  {
+    id: "novelties-gifts",
+    title: "Novelties & Gifts",
+    slug: "novelties-gifts",
+    description: "Curated gift sets, educational games, bookmarks, and creative collectibles.",
+    icon: "Gift",
+    badge: "Curated Gifts",
     productCount: 1,
   },
 ];
@@ -265,12 +289,14 @@ export const getStoreCollections = cache(async (): Promise<StoreCollection[]> =>
       db
         .select()
         .from(collections)
-        .orderBy(asc(collections.sortOrder), desc(collections.createdAt)),
+        .orderBy(asc(collections.sortOrder), desc(collections.createdAt))
+        .catch(() => []),
       db
         .select({ id: products.id, category: products.category })
         .from(products)
-        .where(eq(products.status, "Active")),
-      db.select().from(productCollections),
+        .where(eq(products.status, "Active"))
+        .catch(() => []),
+      db.select().from(productCollections).catch(() => []),
     ]);
 
     if (colRows && colRows.length > 0) {

@@ -105,7 +105,7 @@ const initialProducts = Array.from({ length: 120 }, (_, i) => {
     category: "Print Books",
     channels: status === "Archived" ? "0" : "4",
     type: i % 3 === 0 ? "Workbook" : i % 3 === 1 ? "Reader" : "Textbook",
-    vendor: "Learnix LK",
+    vendor: "Prasanthi Craft",
     noImage: i % 7 === 0,
     price: `LKR ${((i % 50) * 150 + 450).toFixed(2)}`,
     comparePrice: `LKR ${(((i % 50) * 150 + 450) * 1.15).toFixed(2)}`,
@@ -165,6 +165,12 @@ export default function ProductsPage() {
   const [isSortSubMenuOpen, setIsSortSubMenuOpen] = useState(false);
   const [isBulkSelectionMenuOpen, setIsBulkSelectionMenuOpen] = useState(false);
   const [isMoreBulkActionsOpen, setIsMoreBulkActionsOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const handleConfirmBulkAction = async () => {
     if (!confirmModalType) return;
@@ -1041,6 +1047,10 @@ export default function ProductsPage() {
       <ImportProductsModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={(count) => {
+          loadProducts();
+          showToast(`Successfully imported ${count} ${count === 1 ? "product" : "products"}`);
+        }}
       />
 
       {/* Collection Modal for Add/Remove to Collection(s) */}
@@ -1120,6 +1130,20 @@ export default function ProductsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Bottom-Center Dark Toast Banner */}
+      {toastMessage && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-[#000000] text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-3 text-[13px] font-medium border border-[#262626] animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span>{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="text-[#8c8c8c] hover:text-white transition p-0.5 rounded cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>

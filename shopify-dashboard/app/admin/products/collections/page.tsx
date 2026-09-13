@@ -28,6 +28,7 @@ import {
   bulkDeleteCollectionsAction, 
   type AdminCollectionItem 
 } from "@/app/actions/collections";
+import { isShowcaseCollection } from "@/lib/store/collections";
 
 export default function Collections() {
   const router = useRouter();
@@ -534,6 +535,14 @@ export default function Collections() {
                           <span className="truncate text-[#1a1a1a] hover:underline" title={c.title}>
                             {c.title}
                           </span>
+                          {isShowcaseCollection(c) && (
+                            <span 
+                              className="shrink-0 text-[10.5px] font-medium bg-amber-50 text-amber-900 border border-amber-300/80 rounded px-1.5 py-0.5"
+                              title="Linked directly to homepage section"
+                            >
+                              Homepage Section
+                            </span>
+                          )}
                         </div>
                       </td>
                       {isColVisible("products") && (

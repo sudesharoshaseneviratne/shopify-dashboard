@@ -4,26 +4,42 @@ import { useState, useMemo, MouseEvent } from "react";
 
 export function useTableLogic<T extends Record<string, any>>(
   initialData: T[],
-  idKey: keyof T = "id"
+  idKey: keyof T = "id",
+  defaultSortColumn: string | null = null,
+  defaultSortDirection: "asc" | "desc" = "asc"
 ) {
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
   const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<string | null>(defaultSortColumn);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">(defaultSortDirection);
 
   // Sorted Data Calculation
   const sortedData = useMemo(() => {
     if (!sortColumn) return initialData;
 
     return [...initialData].sort((a, b) => {
+      // Numerical order number or order id sorting (e.g. #1015 vs #1002)
+      if (sortColumn === "id" || sortColumn === "order" || sortColumn === "orderNumber") {
+        const numA = typeof a.orderNumber === "number" 
+          ? a.orderNumber 
+          : parseInt(String(a[sortColumn] || a.id || "").replace(/[^0-9]/g, ""), 10);
+        const numB = typeof b.orderNumber === "number" 
+          ? b.orderNumber 
+          : parseInt(String(b[sortColumn] || b.id || "").replace(/[^0-9]/g, ""), 10);
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return sortDirection === "asc" ? numA - numB : numB - numA;
+        }
+      }
+
       let valA = a[sortColumn];
       let valB = b[sortColumn];
 
       if (valA == null) return 1;
       if (valB == null) return -1;
 
-      // Handle currency strings like "Rs 2,060.00"
-      if (typeof valA === "string" && (valA.includes("Rs ") || valA.includes("LKR"))) {
+      // Handle currency strings like "Rs 2,060.00" or "$25.00"
+      if (typeof valA === "string" && (valA.includes("Rs ") || valA.includes("LKR") || valA.startsWith("$"))) {
         valA = parseFloat(valA.replace(/[^0-9.]/g, "")) || 0;
         valB = parseFloat(valB.replace(/[^0-9.]/g, "")) || 0;
       } else if (typeof valA === "string") {
@@ -43,7 +59,12 @@ export function useTableLogic<T extends Record<string, any>>(
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
     } else {
       setSortColumn(columnKey);
-      setSortDirection("asc");
+      // For orders / dates, clicking defaults to desc (latest first)
+      setSortDirection(
+        columnKey === "id" || columnKey === "order" || columnKey === "orderNumber" || columnKey === "date"
+          ? "desc"
+          : "asc"
+      );
     }
   };
 

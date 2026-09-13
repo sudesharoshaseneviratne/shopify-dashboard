@@ -24,21 +24,19 @@ if (!connectionString) {
     connect_timeout: 2
   });
 } else {
+  const poolOptions: postgres.Options<{}> = {
+    max: 10,
+    idle_timeout: 15,
+    max_lifetime: 120, // Prevents stale/dead sockets from accumulating on Supabase pooler
+    connect_timeout: 8,
+    prepare: false, // Critical: Disables prepared statements for Supabase transaction pooler (port 6543)
+  };
+
   if (process.env.NODE_ENV === "production") {
-    client = postgres(connectionString, {
-      max: 10,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      prepare: false, // Critical: Disables prepared statements for Supabase transaction pooler (port 6543)
-    });
+    client = postgres(connectionString, poolOptions);
   } else {
     if (!global._postgresClient) {
-      global._postgresClient = postgres(connectionString, {
-        max: 10,
-        idle_timeout: 20,
-        connect_timeout: 10,
-        prepare: false, // Supabase pooler compatibility
-      });
+      global._postgresClient = postgres(connectionString, poolOptions);
     }
     client = global._postgresClient;
   }

@@ -13,6 +13,8 @@ export interface ProductExportItem {
   channels: string;
   type: string;
   vendor: string;
+  price?: string;
+  comparePrice?: string;
   created?: string;
   updated?: string;
 }
@@ -79,6 +81,8 @@ export function ExportProductsModal({
       "ID",
       "Title",
       "Status",
+      "Price",
+      "Compare-at Price",
       "Inventory",
       "Category",
       "Channels",
@@ -92,6 +96,8 @@ export function ExportProductsModal({
       p.id,
       `"${p.name.replace(/"/g, '""')}"`,
       p.status,
+      `"${p.price || ""}"`,
+      `"${p.comparePrice || ""}"`,
       `"${p.inventory}"`,
       `"${p.category}"`,
       p.channels,

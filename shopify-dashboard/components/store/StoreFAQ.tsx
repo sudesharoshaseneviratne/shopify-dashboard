@@ -1,36 +1,36 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown, HelpCircle, Shield, Zap, Truck, Lock } from "lucide-react";
+import { ChevronDown, HelpCircle, Shield, CreditCard, Truck, BookOpen, CheckCircle } from "lucide-react";
 
 export function StoreFAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = [
     {
-      question: "How are shipments packaged to prevent supply-chain interdiction?",
-      answer: "Every hardware unit is hermetically sealed in a laser-serialized, tamper-evident Faraday pouch before entering courier transit. The package contains a multi-layer holographic seal that reveals irreversible microscopic fracturing if opened or X-rayed improperly. Upon unboxing, verify your package's hash code with our PGP public key.",
+      question: "How long does islandwide courier delivery take?",
+      answer: "Orders within Colombo and Western Province are typically delivered within 24 hours. For outstation locations (Kandy, Galle, Kurunegala, Jaffna, etc.), delivery takes 24-48 business hours via our registered express courier partners.",
       icon: Truck
     },
     {
-      question: "Which payment methods are accepted?",
-      answer: "We natively support Bitcoin Lightning Network (LNURL / WebLN for zero-fee, sub-second settlement), On-Chain Bitcoin (Native SegWit / Taproot), and traditional credit/debit cards processed through our isolated, zero-retention PCI enclave.",
-      icon: Zap
+      question: "Which payment methods do you accept?",
+      answer: "We support Visa, Mastercard, and American Express with 256-bit SSL encryption, Cash on Delivery (pay cash to the delivery agent at your doorstep), and direct bank transfer to our Commercial Bank account.",
+      icon: CreditCard
     },
     {
-      question: "Is the firmware 100% open-source and reproducible?",
-      answer: "Yes. All firmware source code is publicly accessible on GitHub and reproducible via Gitian deterministic builds. You can compile the exact binary from source, generate its SHA-256 checksum, and verify it bit-for-bit against the binary preloaded on your hardware before running it.",
-      icon: Lock
+      question: "Are all books and workbooks authentic official editions?",
+      answer: "Yes, 100%. All educational textbooks, dictionaries, and workbooks are sourced directly from authorized publishers including Oxford University Press, Cambridge, Pearson, and registered local educational bodies.",
+      icon: BookOpen
     },
     {
-      question: "What is your return policy & warranty protection?",
-      answer: "We offer a 30-day sovereign money-back guarantee and a comprehensive 2-year replacement warranty on all hardware signers, ASIC mining rigs, and sovereign nodes. If a device exhibits any hardware fault, we dispatch a new sealed replacement immediately.",
+      question: "What is your return & exchange policy?",
+      answer: "We offer a hassle-free 7-day replacement guarantee. If a book or product arrives with any manufacturing defect, missing pages, or transit damage, contact our support hotline for an immediate courier replacement at no extra charge.",
       icon: Shield
     },
     {
-      question: "What happens if I enter a duress PIN on the Satoshi ColdKey?",
-      answer: "If forced under physical duress to unlock your device, entering your secondary 'Duress PIN' instantly presents a decoy wallet with a minimal plausible balance, or completely zeroizes volatile flash memory and secure enclaves in under 15 nanoseconds, rendering brute force impossible.",
-      icon: HelpCircle
+      question: "Can I place bulk orders for schools or booklists?",
+      answer: "Yes! We specialize in fulfilling annual school booklists, tuition center materials, and corporate stationery orders with volume discounts. Reach out to our hotline at +9477 423 0976 for custom quotations.",
+      icon: CheckCircle
     }
   ];
 
@@ -39,13 +39,13 @@ export function StoreFAQ() {
       <div className="text-center space-y-3 max-w-2xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-300 border-2 border-black shadow-[2px_2px_0px_0px_#000] text-xs font-mono text-black font-bold">
           <HelpCircle className="w-4 h-4 stroke-[2.5]" />
-          <span>SOVEREIGN DISPATCH PROTOCOL</span>
+          <span>HELP &amp; CUSTOMER SUPPORT</span>
         </div>
         <h2 className="font-heading font-bold text-3xl sm:text-4xl text-slate-900">
-          Frequently Answered <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Queries</span>
+          Frequently Asked <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Questions</span>
         </h2>
         <p className="text-xs sm:text-sm text-slate-600 font-body font-medium">
-          Everything you need to know about air-gapped shipping, warranty, Bitcoin settlement, and reproducible firmware.
+          Everything you need to know about islandwide delivery, payment options, genuine quality, and book returns.
         </p>
       </div>
 
@@ -60,25 +60,26 @@ export function StoreFAQ() {
             >
               <button
                 onClick={() => setOpenIndex(isOpen ? null : index)}
-                className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-amber-50/50 transition"
+                className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 cursor-pointer bg-white transition-colors"
+                aria-expanded={isOpen}
               >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-xl bg-amber-300 border-2 border-black shadow-[2px_2px_0px_0px_#000] flex items-center justify-center text-black shrink-0">
-                    <Icon className="w-4 h-4 stroke-[2.5]" />
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-amber-700" />
                   </div>
-                  <span className="font-heading font-bold text-sm sm:text-base text-slate-900">
+                  <span className="font-heading font-bold text-base sm:text-lg text-slate-900 leading-snug">
                     {faq.question}
                   </span>
                 </div>
                 <ChevronDown
-                  className={`w-5 h-5 text-black stroke-[2.5] shrink-0 transition-transform duration-300 ${
+                  className={`w-5 h-5 text-slate-500 shrink-0 transition-transform duration-300 ${
                     isOpen ? "rotate-180 text-amber-600" : ""
                   }`}
                 />
               </button>
 
               {isOpen && (
-                <div className="px-6 pb-6 pt-2 text-xs sm:text-sm text-slate-700 font-body leading-relaxed border-t-2 border-black/10 animate-in slide-in-from-top-2 duration-200 font-medium">
+                <div className="px-5 pb-6 sm:px-6 pt-0 text-slate-600 text-xs sm:text-sm font-body leading-relaxed border-t border-slate-100 mt-2 pt-4">
                   {faq.answer}
                 </div>
               )}
@@ -89,3 +90,5 @@ export function StoreFAQ() {
     </section>
   );
 }
+
+export default StoreFAQ;

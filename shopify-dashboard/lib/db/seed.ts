@@ -3,12 +3,12 @@ dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 import { db, client } from "./index";
-import { products, orders, discounts, storeSettings } from "./schema";
+import { products, orders, discounts, storeSettings, customers } from "./schema";
 import { STORE_PRODUCTS } from "../store/products";
 import { initialOrdersList } from "../admin/ordersData";
 
 async function runSeed() {
-  console.log("🌱 Starting Satoshi DeFi Database Seeder...");
+  console.log("🌱 Starting Prasanthi Craft Database Seeder...");
 
   if (!process.env.DATABASE_URL) {
     console.error("❌ Error: DATABASE_URL is not set in .env.local. Aborting seed.");
@@ -22,35 +22,35 @@ async function runSeed() {
       .insert(storeSettings)
       .values({
         id: 1,
-        storeName: "SATOSHI DEFI",
-        supportPhone: "+9475 245 5812",
-        supportEmail: "support@satoshidefi.vault",
+        storeName: "PRASANTHI CRAFT",
+        supportPhone: "+9477 423 0976",
+        supportEmail: "prasanthicrafts@gmail.com",
         freeShippingThreshold: "5000.00",
         standardShippingFee: "350.00",
-        marqueeAnnouncement: "USE VOUCHER CODE SATOSHI21 FOR 21% OFF",
-        btcUsdRate: "95240.00",
+        marqueeAnnouncement: "USE VOUCHER CODE WELCOME10 FOR 10% OFF",
+        btcUsdRate: "320.00",
         isMaintenanceMode: false,
       })
       .onConflictDoNothing();
 
-    // 2. Seed Default Promo Code: SATOSHI21
-    console.log("🎟️  Seeding Promo Code (SATOSHI21)...");
+    // 2. Seed Default Promo Code: WELCOME10
+    console.log("🎟️  Seeding Promo Code (WELCOME10)...");
     await db
       .insert(discounts)
       .values({
-        id: "discount-satoshi-21",
-        code: "SATOSHI21",
-        discountPercent: 21,
+        id: "discount-welcome-10",
+        code: "WELCOME10",
+        discountPercent: 10,
         discountAmount: "0.00",
         minOrderAmount: "0.00",
-        usageLimit: 500,
-        timesUsed: 14,
+        usageLimit: 1000,
+        timesUsed: 12,
         isActive: true,
       })
       .onConflictDoNothing();
 
     // 3. Seed Products from Store Catalog
-    console.log(`📦 Seeding ${STORE_PRODUCTS.length} Hardware Products...`);
+    console.log(`📦 Seeding ${STORE_PRODUCTS.length} Craft & Stationery Products...`);
     for (const prod of STORE_PRODUCTS) {
       await db
         .insert(products)
@@ -108,6 +108,35 @@ async function runSeed() {
           status: ord.status,
           alert: ord.alert,
           due: ord.due,
+        })
+        .onConflictDoNothing();
+    }
+
+    // 5. Seed Initial Customers
+    console.log("👥 Seeding Initial Customers...");
+    const initialCustomersList = [
+      { id: "cust_seed_1", name: "Amila Upulitha", email: "upulitha84@gmail.com", phone: "0718376329", location: "Galle, Sri Lanka", subscription: "Not subscribed", orders: 1, spent: "20560.00" },
+      { id: "cust_seed_2", name: "Wasantha Ekanayake", email: "ekanayakewasantha58@gmail.com", phone: "0771234567", location: "Kandy, Sri Lanka", subscription: "Subscribed", orders: 0, spent: "0.00" },
+      { id: "cust_seed_3", name: "Fathima Hirshard", email: "hirshard.fathima@gmail.com", phone: "0768901234", location: "Colombo, Sri Lanka", subscription: "Not subscribed", orders: 1, spent: "2060.00" },
+      { id: "cust_seed_4", name: "Isuru Abeyrama", email: "isuru.abey@outlook.com", phone: "0714567890", location: "Tangalle, Sri Lanka", subscription: "Not subscribed", orders: 1, spent: "3960.00" },
+      { id: "cust_seed_5", name: "E. P. H. De Silva", email: "desilva.eph@yahoo.com", phone: "0782345678", location: "Polgolla, Sri Lanka", subscription: "Not subscribed", orders: 1, spent: "2436.00" },
+      { id: "cust_seed_6", name: "Kavinda Perera", email: "kavinda.perera@gmail.com", phone: "+9475 245 5812", location: "Colombo, Sri Lanka", subscription: "Subscribed", orders: 3, spent: "14500.00" },
+    ];
+
+    for (const c of initialCustomersList) {
+      await db
+        .insert(customers)
+        .values({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          location: c.location,
+          subscriptionStatus: c.subscription,
+          ordersCount: c.orders,
+          totalSpent: c.spent,
+          notes: "Seeded test customer",
+          role: "customer",
         })
         .onConflictDoNothing();
     }

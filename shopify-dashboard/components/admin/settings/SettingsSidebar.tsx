@@ -83,13 +83,13 @@ export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps
       {/* Store Header */}
       <div className="p-3.5 border-b border-[#f1f2f4] flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-[#005bd3] text-white font-bold flex items-center justify-center text-[13px] shadow-2xs">
-          LK
+          PC
         </div>
         <div className="flex flex-col min-w-0">
           <span className="text-[13px] font-semibold text-[#1a1a1a] truncate leading-tight">
-            Learnix LK
+            Prasanthi Craft
           </span>
-          <span className="text-[11px] text-[#616161] truncate">learnix.lk</span>
+          <span className="text-[11px] text-[#616161] truncate">prasanthicraft.com</span>
         </div>
       </div>
 
@@ -142,13 +142,13 @@ export function SettingsSidebar({ activeTab, onTabChange }: SettingsSidebarProps
       {/* Footer User Profile */}
       <div className="p-3 border-t border-[#e1e3e5] bg-white flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-full bg-[#005bd3] text-white font-medium flex items-center justify-center text-[11px]">
-          LK
+          PC
         </div>
         <div className="flex flex-col min-w-0">
           <span className="text-[12px] font-semibold text-[#1a1a1a] truncate leading-tight">
-            Learnix LK
+            Prasanthi Craft
           </span>
-          <span className="text-[11px] text-[#616161] truncate">learnixlk@gmail.com</span>
+          <span className="text-[11px] text-[#616161] truncate">prasanthicrafts@gmail.com</span>
         </div>
       </div>
     </div>

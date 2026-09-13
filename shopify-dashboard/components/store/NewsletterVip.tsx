@@ -40,10 +40,10 @@ export function NewsletterVip() {
 
           <div className="space-y-2">
             <h2 className="font-heading font-black text-3xl sm:text-4xl text-slate-900">
-              Join the Satoshi <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#EA580C] to-[#F7931A]">Dispatch</span>
+              Join the Prasanthi Craft <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#EA580C] to-[#F7931A]">Insider Club</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 font-body">
-              Receive early allocation notifications for limited hardware batches, mempool fee alerts, and firmware security advisories. Plus get 10% off your first hardware order.
+              Receive updates on new curriculum textbook arrivals, school supplies, special book discounts, and stationery promotions. Plus get 10% off your first order.
             </p>
           </div>
 
@@ -51,7 +51,7 @@ export function NewsletterVip() {
             <div className="p-6 rounded-2xl bg-white border border-orange-300 space-y-4 animate-in zoom-in-95 duration-200 shadow-sm">
               <div className="flex items-center justify-center gap-2 text-emerald-700 font-mono text-sm font-bold">
                 <Check className="w-5 h-5 text-emerald-600" />
-                <span>Subscribed! Your VIP Discount Voucher is Activated</span>
+                <span>Subscribed! Your Welcome Discount Voucher is Activated</span>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <div className="px-5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 font-mono text-lg font-bold text-[#EA580C] tracking-widest">
@@ -66,7 +66,7 @@ export function NewsletterVip() {
                 </button>
               </div>
               <p className="text-[11px] font-mono text-slate-500">
-                10% discount has also been automatically applied to your vault checkout manifest!
+                Use code WELCOME10 for 10% off during checkout!
               </p>
             </div>
           ) : (
@@ -75,7 +75,7 @@ export function NewsletterVip() {
                 <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
-                  placeholder="satoshi@domain.com"
+                  placeholder="customer@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

@@ -12,7 +12,10 @@ import {
   Eye, 
   Check, 
   Heart,
-  ShoppingCart
+  ShoppingCart,
+  BookOpen,
+  Package,
+  Gift
 } from "lucide-react";
 import { StoreProduct } from "@/lib/store/products";
 import { useCart } from "@/lib/store/cartContext";
@@ -77,16 +80,18 @@ export function ProductCard({ product }: ProductCardProps) {
   // Determine category icon
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "Cold Storage":
-        return Shield;
-      case "Mining & ASICs":
+      case "Books & Workbooks":
+        return BookOpen;
+      case "Tech & Electronics":
         return Cpu;
-      case "Sovereign Nodes":
-        return Server;
-      case "Security & Backup":
-        return Lock;
-      default:
+      case "Stationery & Office":
         return Layers;
+      case "School Essentials":
+        return Package;
+      case "Novelties & Gifts":
+        return Gift;
+      default:
+        return Package;
     }
   };
 
@@ -134,7 +139,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Clickable Product Anchor for the Image */}
         <Link 
-          href={`/store/products/${product.id}`} 
+          href={`/products/${product.id}`} 
           className="absolute inset-0 flex items-center justify-center overflow-hidden bg-white"
         >
           {product.images && product.images.length > 0 ? (
@@ -191,7 +196,7 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Bottom Content Area with Padding */}
       <div className="p-4 sm:p-5 flex flex-col justify-between grow relative z-10">
         {/* Product Title */}
-        <Link href={`/store/products/${product.id}`} className="block mb-3">
+        <Link href={`/products/${product.id}`} className="block mb-3">
           <h3 className="font-heading font-bold text-base sm:text-lg text-slate-900 group-hover:text-amber-600 transition line-clamp-2 min-h-[3rem] leading-snug">
             {product.name}
           </h3>

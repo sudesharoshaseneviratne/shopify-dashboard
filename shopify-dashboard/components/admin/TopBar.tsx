@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { logoutAdminAction } from "@/app/actions/adminAuth";
+import { supabase } from "@/lib/supabaseClient";
 
 const searchItems = [
   { title: "Home Dashboard", category: "Navigation", href: "/admin", icon: <ShoppingBag className="w-4 h-4" /> },
@@ -82,9 +84,15 @@ export function TopBar() {
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutModal(false);
-    router.push("/admin/login");
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore
+    }
+    await logoutAdminAction();
+    window.location.href = "/admin/login?logged_out=true";
   };
 
   return (
@@ -255,7 +263,7 @@ export function TopBar() {
             )}
           </div>
 
-          {/* Learnix LK Store Avatar Button & Account Popover */}
+          {/* Prasanthi Craft Store Avatar Button & Account Popover */}
           <div className="relative">
             <button 
               onClick={() => {
@@ -267,9 +275,9 @@ export function TopBar() {
               }`}
             >
               <div className="w-5 h-5 rounded bg-[#38bdf8] flex items-center justify-center shrink-0">
-                <span className="text-[9px] font-bold text-[#0f172a]">LK</span>
+                <span className="text-[9px] font-bold text-[#0f172a]">PC</span>
               </div>
-              <span className="text-[13px] font-medium text-white">Learnix LK</span>
+              <span className="text-[13px] font-medium text-white">Prasanthi Craft</span>
             </button>
 
             {/* Account Popover Card */}
@@ -278,17 +286,17 @@ export function TopBar() {
                 {/* Account Profile Section */}
                 <div className="px-3 py-2 flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-[#38bdf8] flex items-center justify-center shrink-0 shadow-2xs">
-                    <span className="text-[10px] font-bold text-[#0f172a]">LK</span>
+                    <span className="text-[10px] font-bold text-[#0f172a]">PC</span>
                   </div>
                   <div>
-                    <div className="text-[13px] font-semibold text-[#1a1a1a]">Learnix LK</div>
-                    <div className="text-[12px] text-[#616161]">learnixlk@gmail.com</div>
+                    <div className="text-[13px] font-semibold text-[#1a1a1a]">Prasanthi Craft</div>
+                    <div className="text-[12px] text-[#616161]">prasanthicrafts@gmail.com</div>
                   </div>
                 </div>
 
                 {/* Visit Store Front Option */}
                 <Link 
-                  href="/store" 
+                  href="/" 
                   onClick={() => setIsAccountOpen(false)}
                   className="flex items-center justify-between px-3 py-2 text-[13px] font-medium text-[#303030] hover:bg-[#f6f6f7] rounded-xl transition text-left mt-1 group"
                 >
@@ -333,7 +341,7 @@ export function TopBar() {
               <LogOut className="w-5 h-5" />
             </div>
 
-            <h3 className="text-[17px] font-semibold text-[#1a1a1a] tracking-tight">Log out of Learnix LK?</h3>
+            <h3 className="text-[17px] font-semibold text-[#1a1a1a] tracking-tight">Log out of Prasanthi Craft?</h3>
             <p className="text-[13px] text-[#616161] mt-1.5 leading-relaxed">
               Are you sure you want to log out? You will need to sign back in to access your store admin dashboard.
             </p>

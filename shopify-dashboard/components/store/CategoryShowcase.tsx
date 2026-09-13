@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { StoreCollection } from "@/lib/store/products";
+import { isShowcaseCollection } from "@/lib/store/collections";
 
 interface CategoryShowcaseProps {
   collections?: StoreCollection[];
@@ -11,19 +12,21 @@ interface CategoryShowcaseProps {
 const DEFAULT_COLORS = ["#FFB800", "#EAB308", "#D97706", "#CA8A04", "#F59E0B", "#10B981", "#3B82F6"];
 
 export function CategoryShowcase({ collections, onSelectCategory }: CategoryShowcaseProps) {
-  const displayCategories = (collections && collections.length > 0)
-    ? collections.map((col, idx) => ({
+  const filteredCollections = (collections || []).filter((col) => !isShowcaseCollection(col));
+
+  const displayCategories = filteredCollections.length > 0
+    ? filteredCollections.map((col, idx) => ({
         name: col.title,
         color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
-        href: `/store/products?category=${encodeURIComponent(col.title)}`,
+        href: `/products?category=${encodeURIComponent(col.title)}`,
         count: col.productCount ?? 0,
       }))
     : [
-        { name: "Cold Storage", color: "#FFB800", href: "/store/products?category=Cold%20Storage", count: 2 },
-        { name: "Mining & ASICs", color: "#EAB308", href: "/store/products?category=Mining%20%26%20ASICs", count: 1 },
-        { name: "Sovereign Nodes", color: "#D97706", href: "/store/products?category=Sovereign%20Nodes", count: 2 },
-        { name: "Security & Backup", color: "#CA8A04", href: "/store/products?category=Security%20%26%20Backup", count: 2 },
-        { name: "Cryptographic Relics", color: "#F59E0B", href: "/store/products?category=Cryptographic%20Relics", count: 1 },
+        { name: "Books & Workbooks", color: "#FFB800", href: "/products?category=Books%20%26%20Workbooks", count: 4 },
+        { name: "Tech & Electronics", color: "#EAB308", href: "/products?category=Tech%20%26%20Electronics", count: 3 },
+        { name: "Stationery & Office", color: "#D97706", href: "/products?category=Stationery%20%26%20Office", count: 3 },
+        { name: "School Essentials", color: "#CA8A04", href: "/products?category=School%20Essentials", count: 2 },
+        { name: "Novelties & Gifts", color: "#F59E0B", href: "/products?category=Novelties%20%26%20Gifts", count: 2 },
       ];
 
   return (
@@ -31,17 +34,17 @@ export function CategoryShowcase({ collections, onSelectCategory }: CategoryShow
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b-2 border-black/10 pb-4">
         <div>
           <div className="text-xs font-mono text-amber-800 font-bold tracking-wider uppercase">
-            EXPLORE HARDWARE SUITES
+            EXPLORE CURATED COLLECTIONS
           </div>
           <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
             Shop By <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Category</span>
           </h2>
         </div>
         <Link 
-          href="/store/products"
+          href="/products"
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-amber-50 text-slate-950 border-2 border-black font-heading font-bold text-xs shadow-[2px_2px_0px_0px_#000] hover:shadow-[3px_3px_0px_0px_#FFB800] active:translate-x-0.5 active:translate-y-0.5 transition-all cursor-pointer shrink-0"
         >
-          <span>View All Hardware</span>
+          <span>View All Products</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>

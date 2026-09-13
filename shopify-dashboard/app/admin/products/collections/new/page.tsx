@@ -52,7 +52,7 @@ export default function AddCollectionPage() {
           prods.map((p) => ({
             id: p.id,
             name: p.name,
-            price: `$${p.rawPrice.toFixed(2)}`,
+            price: `LKR ${p.rawPrice.toFixed(2)}`,
             status: p.status,
           }))
         );
@@ -288,8 +288,8 @@ export default function AddCollectionPage() {
               </button>
             </div>
             <div className="space-y-0.5 pt-1">
-              <div className="text-[14px] font-semibold text-[#005bd3]">Learnix LK</div>
-              <div className="text-[12px] text-[#006621]">https://learnix.lk › collections ›</div>
+              <div className="text-[14px] font-semibold text-[#005bd3]">Prasanthi Craft</div>
+              <div className="text-[12px] text-[#006621]">https://prasanthicraft.com › collections ›</div>
             </div>
           </div>
         </div>

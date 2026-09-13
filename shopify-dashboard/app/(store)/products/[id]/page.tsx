@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   if (!product) {
     return {
-      title: "Cryptographic Node Not Found | Satoshi DeFi",
-      description: "The requested hardware slug does not exist on mainnet.",
+      title: "Product Not Found | Prasanthi Craft",
+      description: "The requested product does not exist in the store catalog.",
     };
   }
 
   return {
-    title: `${product.name} | Satoshi DeFi Store`,
+    title: `${product.name} | Prasanthi Craft`,
     description: product.tagline || product.description,
   };
 }

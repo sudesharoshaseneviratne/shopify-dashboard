@@ -12,7 +12,9 @@ import {
   Copy, 
   ArrowLeft, 
   Truck, 
-  RefreshCw 
+  RefreshCw,
+  ShieldCheck,
+  ShoppingCart
 } from "lucide-react";
 import type { StoreProduct } from "@/lib/store/products";
 import { useCart } from "@/lib/store/cartContext";
@@ -33,10 +35,10 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-6">
-        <h1 className="font-heading font-bold text-3xl text-slate-900">Cryptographic Node Not Found</h1>
-        <p className="text-sm font-mono text-slate-500">The requested hardware slug does not exist on mainnet.</p>
+        <h1 className="font-heading font-bold text-3xl text-slate-900">Product Not Found</h1>
+        <p className="text-sm font-body text-slate-500">The requested product could not be located in our catalog.</p>
         <Link
-          href="/store"
+          href="/"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 text-slate-950 font-heading font-bold text-xs uppercase shadow-md shadow-amber-500/20"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -52,21 +54,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     setTimeout(() => setAdded(false), 1500);
   };
 
-  const handleCopyHash = () => {
-    navigator.clipboard?.writeText("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    setCopiedHash(true);
-    setTimeout(() => setCopiedHash(false), 2000);
-  };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-16">
       {/* Breadcrumb Navigation */}
       <nav className="flex items-center gap-2 text-xs font-mono text-slate-500">
-        <Link href="/store" className="hover:text-slate-900 transition">
-          Vault Mainnet
+        <Link href="/" className="hover:text-slate-900 transition">
+          Home
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-        <Link href="/store/products" className="hover:text-slate-900 transition">
+        <Link href="/products" className="hover:text-slate-900 transition">
           {product.category}
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
@@ -142,24 +138,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
           )}
 
-          {/* SHA-256 Firmware Checksum Block */}
+          {/* Authentic Product & Warranty Guarantee */}
           <div className="p-5 rounded-2xl bg-white border border-slate-200 space-y-2.5 font-mono text-xs shadow-xs">
-            <div className="flex items-center justify-between text-slate-600">
-              <div className="flex items-center gap-2 text-slate-900">
-                <Terminal className="w-4 h-4 text-amber-600" />
-                <span className="font-bold">Reproducible SHA-256 Checksum:</span>
-              </div>
-              <button
-                onClick={handleCopyHash}
-                className="flex items-center gap-1 text-amber-700 font-bold hover:underline cursor-pointer"
-              >
-                {copiedHash ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedHash ? "Copied" : "Copy Hash"}</span>
-              </button>
+            <div className="flex items-center gap-2 text-slate-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="font-bold">100% Authentic Quality Guaranteed</span>
             </div>
-            <div className="p-2.5 rounded-lg bg-slate-50 text-[11px] text-slate-600 break-all border border-slate-200 font-medium">
-              e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
-            </div>
+            <p className="text-[11px] font-body text-slate-600 leading-relaxed">
+              Supplied directly from certified publishers &amp; distributors with official warranty and express islandwide courier tracking.
+            </p>
           </div>
         </div>
 
@@ -186,94 +173,93 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </p>
           </div>
 
-          {/* Pricing & Sats Conversion Block */}
+          {/* Pricing Block */}
           <div className="p-6 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
             <div>
               <div className="font-mono text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
                 {formatPrice(product.priceUsd)}
               </div>
-              <div className="font-mono text-xs text-amber-700 mt-1 font-bold">
-                ≈ {product.priceSats.toLocaleString()} Sats • ₿ {(product.priceUsd / 95240).toFixed(6)}
+              <div className="font-mono text-xs text-emerald-700 mt-1 font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Genuine Authentic Stock</span>
               </div>
             </div>
 
             <div className="text-left sm:text-right text-xs font-mono space-y-1">
               <div className="text-emerald-700 font-bold flex items-center sm:justify-end gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>{product.inventory} Units Reserved in Vault</span>
+                <span>{product.inventory} Units In Stock</span>
               </div>
-              <div className="text-slate-500 font-medium">Lead Time: {product.leadTime}</div>
+              <div className="text-slate-500 font-medium">Delivery: {product.leadTime}</div>
             </div>
           </div>
 
-          {/* Key Architectural Features */}
+          {/* Key Features Bullet Points */}
           <div className="space-y-3">
-            <h3 className="font-heading font-bold text-sm uppercase tracking-wider text-slate-900">
-              Sovereignty Guarantees
+            <h3 className="text-xs font-mono font-bold text-slate-900 uppercase tracking-wider">
+              Product Highlights
             </h3>
             <div className="grid grid-cols-1 gap-2.5">
               {product.features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-2.5 text-xs font-body text-slate-600">
-                  <div className="w-4 h-4 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 mt-0.5 text-amber-600">
-                    <Check className="w-2.5 h-2.5" />
-                  </div>
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>{feature}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Quantity and Add CTA Action Group */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-slate-200">
-            <div className="flex items-center rounded-full bg-slate-100 border border-slate-200 px-4 py-3 w-full sm:w-auto justify-between sm:justify-start">
+          {/* Quantity Selection & Add to Cart */}
+          <div className="space-y-4 pt-4 border-t border-slate-200">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center border border-slate-300 rounded-full bg-white p-1 shadow-2xs">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold transition"
+                >
+                  -
+                </button>
+                <span className="px-4 font-mono font-bold text-sm text-slate-900">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold transition"
+                >
+                  +
+                </button>
+              </div>
+
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="text-slate-600 hover:text-slate-900 px-2 text-base font-bold cursor-pointer"
+                onClick={handleAdd}
+                className={`flex-1 py-4 px-6 rounded-full font-heading font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  added
+                    ? "bg-emerald-600 text-white shadow-md"
+                    : "bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 text-slate-950 shadow-md shadow-amber-500/20 hover:scale-105"
+                }`}
               >
-                -
-              </button>
-              <span className="px-4 font-mono text-base font-bold text-slate-900">
-                {quantity}
-              </span>
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="text-slate-600 hover:text-slate-900 px-2 text-base font-bold cursor-pointer"
-              >
-                +
+                {added ? (
+                  <>
+                    <Check className="w-4 h-4 text-white" />
+                    <span className="text-white">Added to Cart!</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 text-slate-950" />
+                    <span>Add to Cart ({formatPrice(product.priceUsd * quantity)})</span>
+                  </>
+                )}
               </button>
             </div>
 
-            <button
-              onClick={handleAdd}
-              className={`flex-1 w-full py-4 rounded-full font-heading font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                added
-                  ? "bg-emerald-600 text-white shadow-md"
-                  : "bg-gradient-to-r from-amber-500 via-[#FFB800] to-yellow-400 text-slate-950 shadow-md shadow-amber-500/20 hover:scale-105"
-              }`}
-            >
-              {added ? (
-                <>
-                  <Check className="w-4 h-4 text-white" />
-                  <span className="text-white">Secured in Vault Cart</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 text-slate-950" />
-                  <span>Equip Hardware Vault</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Guarantee Badges */}
-          <div className="grid grid-cols-2 gap-4 text-xs font-mono text-slate-600 pt-2 font-medium">
-            <div className="flex items-center gap-2">
-              <Truck className="w-4 h-4 text-amber-600" />
-              <span>Insured Air-Gapped Courier</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-amber-600" />
-              <span>Lifetime PGP Verification</span>
+            {/* Quick Guarantees */}
+            <div className="grid grid-cols-2 gap-4 text-xs font-mono text-slate-600 pt-2">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-amber-600" />
+                <span>Express Islandwide Delivery</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-amber-600" />
+                <span>7-Day Replacement Guarantee</span>
+              </div>
             </div>
           </div>
         </div>
@@ -283,10 +269,10 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
       <section className="space-y-6 pt-12 border-t border-slate-200">
         <div className="flex items-center gap-2 text-xs font-mono text-amber-700 font-bold">
           <Cpu className="w-4 h-4" />
-          <span>CRYPTOGRAPHIC DATASHEET</span>
+          <span>PRODUCT SPECIFICATIONS</span>
         </div>
         <h2 className="font-heading font-bold text-2xl sm:text-3xl text-slate-900">
-          Hardware & Firmware <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Specifications</span>
+          Detailed <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Specifications</span>
         </h2>
 
         <div className="rounded-2xl bg-white border border-slate-200 overflow-hidden divide-y divide-slate-100 font-mono text-xs shadow-xs">
@@ -297,16 +283,16 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             </div>
           ))}
           <div className="grid grid-cols-1 sm:grid-cols-3 p-4 hover:bg-slate-50 transition">
-            <div className="text-slate-500 font-semibold">Active Firmware</div>
+            <div className="text-slate-500 font-semibold">Edition / Standard</div>
             <div className="sm:col-span-2 text-amber-700 font-bold mt-1 sm:mt-0">{product.firmwareVersion}</div>
           </div>
         </div>
       </section>
 
-      {/* Related Hardware Section */}
+      {/* Related Products Section */}
       <section className="space-y-6 pt-12 border-t border-slate-200">
         <h2 className="font-heading font-bold text-2xl text-slate-900">
-          Complementary <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Protocol Hardware</span>
+          Recommended <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-500">Products</span>
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {relatedProducts.map((relProduct) => (
