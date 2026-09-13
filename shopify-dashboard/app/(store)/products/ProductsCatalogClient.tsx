@@ -314,7 +314,7 @@ export function ProductsCatalogClient({ initialProducts, collections }: Products
       <div
         className={`grid grid-cols-1 sm:grid-cols-2 ${
           gridCols === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"
-        } gap-6`}
+        } gap-6 [transform:translateZ(0)]`}
       >
         {filteredAndSortedProducts.map((product) => (
           <ProductCard key={product.id} product={product} />

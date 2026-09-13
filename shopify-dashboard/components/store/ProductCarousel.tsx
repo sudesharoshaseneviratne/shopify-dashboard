@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { StoreProduct } from "@/lib/store/products";
 import { ProductCard } from "@/components/store/ProductCard";
@@ -11,65 +11,114 @@ interface ProductCarouselProps {
 }
 
 export function ProductCarousel({ products, autoScrollSpeed = 3500 }: ProductCarouselProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
   const isWrappingRef = useRef(false);
+  const singleSetWidthRef = useRef(0);
+  const rafIdRef = useRef<number | null>(null);
 
-  // Triple the list for a 100% seamless circular infinite loop
-  const displayProducts = products && products.length > 0
-    ? [...products, ...products, ...products]
-    : [];
+  // Take top 8 products max to keep DOM lightweight (24 items when tripled)
+  const slicedProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    return products.slice(0, 8);
+  }, [products]);
+
+  // Triple the list for a seamless circular infinite loop
+  const displayProducts = useMemo(() => {
+    if (slicedProducts.length === 0) return [];
+    return [...slicedProducts, ...slicedProducts, ...slicedProducts];
+  }, [slicedProducts]);
+
+  // Viewport visibility detection using IntersectionObserver
+  // Only auto-scroll when carousel is actually on-screen
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Compute and cache single set width
+  const updateMetrics = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    singleSetWidthRef.current = container.scrollWidth / 3;
+  }, []);
 
   // Initialize position in the middle set
   useEffect(() => {
-    if (!products || products.length === 0) return;
+    if (displayProducts.length === 0) return;
     const container = scrollRef.current;
     if (!container) return;
 
-    // Small delay to ensure children layout & width are computed
     const timer = setTimeout(() => {
       if (container) {
-        const singleSetWidth = container.scrollWidth / 3;
-        container.scrollLeft = singleSetWidth;
+        updateMetrics();
+        if (singleSetWidthRef.current > 0) {
+          container.scrollLeft = singleSetWidthRef.current;
+        }
       }
-    }, 100);
+    }, 150);
 
-    return () => clearTimeout(timer);
-  }, [products]);
+    window.addEventListener("resize", updateMetrics, { passive: true });
 
-  // Handle seamless circular boundary wrapping
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateMetrics);
+    };
+  }, [displayProducts, updateMetrics]);
+
+  // Throttled seamless circular boundary wrapping without synchronous forced reflows
   const handleScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container || isWrappingRef.current) return;
+    if (isWrappingRef.current) return;
+    if (rafIdRef.current) return;
 
-    const singleSetWidth = container.scrollWidth / 3;
-    if (singleSetWidth <= 0) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      const container = scrollRef.current;
+      if (!container || isWrappingRef.current) return;
 
-    // When scrolled past the second set, wrap back to the first/middle set instantly
-    if (container.scrollLeft >= singleSetWidth * 2) {
-      isWrappingRef.current = true;
-      container.style.scrollBehavior = "auto";
-      container.scrollLeft -= singleSetWidth;
-      container.style.scrollBehavior = "smooth";
-      setTimeout(() => {
-        isWrappingRef.current = false;
-      }, 50);
-    } 
-    // When scrolled before the middle set, wrap forward to the second set instantly
-    else if (container.scrollLeft <= 5) {
-      isWrappingRef.current = true;
-      container.style.scrollBehavior = "auto";
-      container.scrollLeft += singleSetWidth;
-      container.style.scrollBehavior = "smooth";
-      setTimeout(() => {
-        isWrappingRef.current = false;
-      }, 50);
-    }
+      const singleSetWidth = singleSetWidthRef.current;
+      if (singleSetWidth <= 0) return;
+
+      const scrollLeft = container.scrollLeft;
+
+      // When scrolled past the second set, wrap back to the first/middle set
+      if (scrollLeft >= singleSetWidth * 2) {
+        isWrappingRef.current = true;
+        container.style.scrollBehavior = "auto";
+        container.scrollLeft = scrollLeft - singleSetWidth;
+        container.style.scrollBehavior = "smooth";
+        setTimeout(() => {
+          isWrappingRef.current = false;
+        }, 60);
+      } 
+      // When scrolled before the middle set, wrap forward to the second set
+      else if (scrollLeft <= 5) {
+        isWrappingRef.current = true;
+        container.style.scrollBehavior = "auto";
+        container.scrollLeft = scrollLeft + singleSetWidth;
+        container.style.scrollBehavior = "smooth";
+        setTimeout(() => {
+          isWrappingRef.current = false;
+        }, 60);
+      }
+    });
   }, []);
 
-  // Auto-scroll forward loop
+  // Auto-scroll forward loop: ONLY when visible in viewport and not paused/hovered
   useEffect(() => {
-    if (isPaused) return;
+    if (!isInViewport || isPaused || displayProducts.length === 0) return;
 
     const interval = setInterval(() => {
       const container = scrollRef.current;
@@ -83,7 +132,7 @@ export function ProductCarousel({ products, autoScrollSpeed = 3500 }: ProductCar
     }, autoScrollSpeed);
 
     return () => clearInterval(interval);
-  }, [isPaused, autoScrollSpeed]);
+  }, [isInViewport, isPaused, autoScrollSpeed, displayProducts.length]);
 
   const scrollPrev = () => {
     const container = scrollRef.current;
@@ -111,7 +160,8 @@ export function ProductCarousel({ products, autoScrollSpeed = 3500 }: ProductCar
 
   return (
     <div 
-      className="relative group/carousel py-2"
+      ref={rootRef}
+      className="relative group/carousel py-2 [contain:layout_style] [transform:translateZ(0)]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -137,7 +187,7 @@ export function ProductCarousel({ products, autoScrollSpeed = 3500 }: ProductCar
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex items-stretch gap-6 overflow-x-auto scroll-smooth no-scrollbar px-1 py-4"
+        className="flex items-stretch gap-6 overflow-x-auto scroll-smooth no-scrollbar px-1 py-4 [overscroll-behavior-x:contain] [transform:translateZ(0)]"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",

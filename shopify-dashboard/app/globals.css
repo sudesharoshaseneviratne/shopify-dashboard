@@ -368,12 +368,12 @@ input[type="checkbox"]:indeterminate::after {
 
 @keyframes pulse-glow {
   0%, 100% {
-    opacity: 0.6;
-    filter: drop-shadow(0 0 15px rgba(247, 147, 26, 0.5));
+    opacity: 0.65;
+    transform: scale3d(0.98, 0.98, 1);
   }
   50% {
     opacity: 1;
-    filter: drop-shadow(0 0 30px rgba(255, 214, 0, 0.8));
+    transform: scale3d(1, 1, 1);
   }
 }
 
@@ -525,6 +525,24 @@ input[type="checkbox"]:indeterminate::after {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0px 0px #000000;
 }
+
+/* ==========================================================================
+   PERFORMANCE & HARDWARE ACCELERATION UTILITIES
+   ========================================================================== */
+.optimized-product-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 280px 420px;
+  contain: layout style paint;
+  transform: translateZ(0);
+}
+
+.hardware-accelerated-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
 
 
 

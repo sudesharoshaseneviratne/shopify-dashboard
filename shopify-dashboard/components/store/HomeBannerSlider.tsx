@@ -15,8 +15,10 @@ interface ImageBannerSlide {
 }
 
 export function HomeBannerSlider() {
+  const rootRef = React.useRef<HTMLDivElement>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(true);
 
   const slides: ImageBannerSlide[] = [
     {
@@ -57,14 +59,28 @@ export function HomeBannerSlider() {
     },
   ];
 
-  // Auto slide advance timer
+  // Viewport visibility detection
   useEffect(() => {
-    if (isPaused) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInViewport(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto slide advance timer (only runs when in viewport)
+  useEffect(() => {
+    if (isPaused || !isInViewport) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 4500);
     return () => clearInterval(interval);
-  }, [isPaused, slides.length]);
+  }, [isPaused, isInViewport, slides.length]);
 
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
@@ -78,7 +94,8 @@ export function HomeBannerSlider() {
 
   return (
     <section 
-      className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-2 sm:pt-4"
+      ref={rootRef}
+      className="relative px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pt-2 sm:pt-4 [transform:translateZ(0)]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

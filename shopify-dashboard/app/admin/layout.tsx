@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppShell } from "@/components/admin/AppShell";
 
 export const metadata: Metadata = {
   title: "Merchant Dashboard | Prasanthi Craft",
@@ -6,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }

@@ -784,7 +784,7 @@ export default function Orders() {
       </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [overscroll-behavior-x:contain] [transform:translateZ(0)]">
           <table className="polaris-table w-full">
             <colgroup>
               <col style={{ width: "36px" }} />

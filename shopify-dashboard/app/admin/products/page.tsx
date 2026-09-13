@@ -630,7 +630,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Table Container */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto [overscroll-behavior-x:contain] [transform:translateZ(0)]">
           <table className="polaris-table w-full">
             <colgroup>
               <col style={{ width: "36px" }} />
@@ -933,7 +933,7 @@ export default function ProductsPage() {
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-7 h-7 rounded border border-[#e1e3e5] bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
                             {product.image ? (
-                              <img src={product.image} alt="" className="w-full h-full object-cover" />
+                              <img src={product.image} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                             ) : product.noImage ? (
                               <ImageIcon className="w-4.5 h-4.5 text-gray-300" />
                             ) : (

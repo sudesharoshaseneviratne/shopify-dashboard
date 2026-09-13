@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/admin/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +27,9 @@ export default function RootLayout({
       <head suppressHydrationWarning />
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#1a1a1a] polaris-app-layout`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );

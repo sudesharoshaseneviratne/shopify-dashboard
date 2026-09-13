@@ -42,7 +42,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-[240px] bg-[#f1f1f1] h-full overflow-y-auto flex flex-col text-[13px] border-r border-[#e1e3e5] rounded-tl-2xl select-none shrink-0">
+    <div className="w-[240px] bg-[#f1f1f1] h-full overflow-y-auto flex flex-col text-[13px] border-r border-[#e1e3e5] rounded-tl-xl select-none shrink-0 [overscroll-behavior-y:contain] [contain:content] [transform:translateZ(0)]">
       <div className="flex-1 py-2 px-1.5 flex flex-col gap-0.5">
         {mainNavItems.map((item) => {
           const isActive = isCurrentPath(item.href);

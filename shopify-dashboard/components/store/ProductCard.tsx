@@ -98,12 +98,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const CategoryIcon = getCategoryIcon(product.category);
 
   return (
-    <div className="group relative rounded-2xl bg-white border-2 border-black flex flex-col justify-between transition-all duration-200 shadow-none hover:shadow-[4px_4px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-black overflow-hidden">
-      {/* Background Decorative Watermark Icon */}
-      <div className="absolute -right-6 -bottom-6 pointer-events-none opacity-5 group-hover:opacity-10 transition-opacity duration-500 text-slate-800 transform rotate-12">
-        <CategoryIcon className="w-44 h-44" />
-      </div>
-
+    <div className="optimized-product-card group relative rounded-2xl bg-white border-2 border-black flex flex-col justify-between transition-[transform,box-shadow] duration-200 shadow-none hover:shadow-[4px_4px_0px_0px_#000] hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-black overflow-hidden [will-change:transform]">
       {/* Top Full-Bleed Product Picture (Flush to Top, Left, and Right without Padding) */}
       <div className="relative w-full h-52 sm:h-56 bg-gradient-to-b from-slate-50 to-slate-100 border-b border-slate-200 flex items-center justify-center overflow-hidden transition duration-200">
         
@@ -146,12 +141,16 @@ export function ProductCard({ product }: ProductCardProps) {
             <img
               src={product.images[0]}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : product.image ? (
             <img
               src={product.image}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

@@ -290,7 +290,7 @@ export function StoreNavbar({ settings, collections }: StoreNavbarProps = {}) {
       </div>
 
       {/* 2. Sticky Navigation Bar (Flush to top 0 with no gap) */}
-      <header className="sticky top-0 z-50 w-full shadow-md select-none">
+      <header className="sticky top-0 z-50 w-full shadow-md select-none [transform:translateZ(0)] isolate">
 
       {/* 2. Main Golden Header Row */}
       <div className="w-full bg-gradient-to-r from-[#FFB800] via-[#F59E0B] to-[#FFB800] text-slate-950 py-3 px-4 sm:px-6 lg:px-8 border-b border-amber-500/30">
